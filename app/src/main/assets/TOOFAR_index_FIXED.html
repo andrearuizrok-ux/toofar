@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
+<meta name="theme-color" content="#090b0f"/>
+<title>TOOFAR?</title>
+<style>
+:root{--bg:#080a0d;--panel:#11151a;--panel2:#171c22;--line:#252c34;--txt:#f8f7f4;--muted:#9aa1aa;--coral:#ff5264;--coral2:#ff7a86;--violet:#bb6cff;--lime:#bdfa65;--cyan:#58d7ff;--yellow:#ffd766;--ok:#55d98b;--danger:#ff5264;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{overscroll-behavior:none}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+#app{min-height:100vh;max-width:520px;margin:0 auto;position:relative;background:radial-gradient(circle at 110% -10%,#311529 0,transparent 35%),var(--bg);}
+.safe{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.top{height:64px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;background:rgba(8,10,13,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.04)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:1000;letter-spacing:-.03em} .brand img{width:36px;height:36px;border-radius:11px} .brand span{font-size:21px} .brand i{color:var(--coral);font-style:normal}
+.iconbtn{width:38px;height:38px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--txt);font-weight:900}
+.screen{display:none;padding:18px 18px 108px;min-height:calc(100vh - 64px)} .screen.active{display:block;animation:fade .2s ease} @keyframes fade{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:none}}
+.splash{position:fixed;inset:0;background:#05070a;z-index:100;display:grid;place-items:center;transition:.35s} .splash.hide{opacity:0;pointer-events:none} .splash img{width:178px;height:178px;border-radius:38px;box-shadow:0 0 60px rgba(255,82,100,.16)} .splash small{display:block;text-align:center;margin-top:16px;color:#aab0b7;letter-spacing:.18em;font-weight:800}
+.kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:1000;color:var(--coral)}
+h1{font-size:38px;line-height:.98;letter-spacing:-.055em;margin:10px 0 12px} h2{font-size:28px;line-height:1.03;letter-spacing:-.04em;margin:8px 0 12px} h3{font-size:18px;margin:0 0 6px}
+p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font-size:10px} .center{text-align:center}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:23px;padding:17px;margin:13px 0;box-shadow:0 16px 34px rgba(0,0,0,.18)}
+.btn{width:100%;border:0;border-radius:16px;padding:15px 16px;font-weight:950;margin-top:10px;color:#fff} .primary{background:linear-gradient(135deg,var(--coral),#ff6b78)} .secondary{background:#252b33} .lime{background:var(--lime);color:#13170c} .ghost{background:transparent;border:1px solid var(--line)} .danger{background:#4a1720}
+.logoHero{display:grid;place-items:center;padding:28px 0 14px} .logoHero img{width:142px;height:142px;border-radius:34px;box-shadow:0 20px 70px rgba(255,82,100,.13)}
+.feature{display:flex;gap:12px;align-items:flex-start;padding:11px 0} .feature b{display:block} .feature .em{font-size:25px;width:35px}
+.field{margin:12px 0} .field label{display:block;font-size:10px;font-weight:900;color:#c7cbd0;margin-bottom:6px} input,textarea{width:100%;background:#0c1014;color:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;outline:none} textarea{min-height:92px;resize:none}
+.avatars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px} .avatarPick{aspect-ratio:1;border:1px solid var(--line);background:#10141a;border-radius:15px;font-size:24px} .avatarPick.sel{border-color:var(--coral);background:#32151c}
+.homeHero{background:linear-gradient(145deg,#25131d,#151118 55%,#141921);border:1px solid #482330;border-radius:28px;padding:21px;margin-bottom:16px;position:relative;overflow:hidden} .homeHero:after{content:"?";position:absolute;right:-8px;top:-42px;font-size:180px;font-weight:1000;color:rgba(255,82,100,.08);transform:rotate(8deg)}
+.modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .mode{min-height:150px;text-align:left;border:1px solid var(--line);border-radius:21px;padding:15px;background:var(--panel);color:#fff} .mode.party{grid-column:1/-1;min-height:130px;background:linear-gradient(135deg,#ff5264,#9b375f 70%,#48254f);border:0} .mode .emoji{font-size:30px;display:block;margin-bottom:18px} .mode b{display:block;font-size:18px;margin-bottom:4px} .mode span{font-size:11px;color:#aab0b7} .mode.party span{color:#ffe5e8}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:82px;background:rgba(8,10,13,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 6px max(12px,env(safe-area-inset-bottom));z-index:30} .nav button{background:none;border:0;color:#858c95;font-size:9px;font-weight:900;min-width:55px} .nav b{display:block;font-size:20px;color:#eef0f2;margin-bottom:2px} .nav .party b{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;background:var(--coral);margin:-27px auto 2px}
+.roomCode{font-size:43px;letter-spacing:.12em;font-weight:1000;color:var(--coral);text-align:center} .statusDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px} .statusDot.off{background:#666}
+.players{display:grid;grid-template-columns:repeat(3,1fr);gap:9px} .player{background:#0e1217;border:1px solid var(--line);border-radius:17px;padding:12px 6px;text-align:center} .player .av{font-size:27px} .player b{display:block;font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .hostBadge{font-size:8px;color:var(--yellow);font-weight:900}
+.chips{display:flex;gap:8px;flex-wrap:wrap} .chip{border:1px solid var(--line);background:#11161c;color:#fff;border-radius:999px;padding:9px 11px;font-size:11px;font-weight:900} .chip.sel{background:#3b2027;border-color:#7d3440;color:#ffced3}
+.topic{display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)} .topic:last-child{border-bottom:0} .grow{flex:1} .topicVote{width:44px;height:40px;border:1px solid var(--line);border-radius:13px;background:#0d1116;color:#fff;font-weight:900} .topicVote.on{background:var(--coral);border-color:var(--coral)}
+.badge{display:inline-flex;padding:6px 9px;border-radius:999px;background:#321820;color:#ff9caa;font-size:10px;font-weight:950} .question{font-size:25px;line-height:1.13;letter-spacing:-.03em;font-weight:950;margin:15px 0}
+.score{font-size:68px;line-height:.9;font-weight:1000;color:var(--coral);text-align:center;margin:15px 0} input[type=range]{accent-color:var(--coral);padding:0;border:0;background:transparent} .rangeLabels{display:flex;justify-content:space-between;font-size:9px;color:#868e98;font-weight:900}
+.lockbox{padding:14px;border:1px dashed #39414b;border-radius:16px;background:#0b0f13;text-align:center;font-size:11px;color:#aab0b7}
+.reveal{display:grid;grid-template-columns:1fr 50px;align-items:center;background:#0d1116;border:1px solid var(--line);border-radius:15px;padding:11px 12px;margin:7px 0} .reveal .who{display:flex;gap:8px;align-items:center} .reveal strong{font-size:20px}
+.bar{height:8px;border-radius:999px;background:#232a31;overflow:hidden;margin-top:6px} .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--coral),var(--violet));border-radius:999px}
+.extremes{display:grid;grid-template-columns:1fr 1fr;gap:10px} .extreme{background:#0e1217;border:1px solid var(--line);border-radius:19px;padding:14px;text-align:center} .extreme .av{font-size:31px} .extreme b{display:block} .extreme strong{display:block;font-size:35px;color:var(--coral)}
+.timer{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;margin:18px auto;border:9px solid #2e222a;font-size:30px;font-weight:1000;color:var(--coral)}
+.option{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:#0e1217;margin:8px 0} .option button{margin-left:auto;border:0;border-radius:12px;padding:9px 11px;background:#272e36;color:#fff;font-weight:900} .option button.sel{background:var(--coral)}
+.pointRow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)} .pointRow:last-child{border-bottom:0} .pointRow .pts{margin-left:auto;font-weight:1000;color:var(--lime)} .titleTag{font-size:9px;font-weight:1000;color:var(--coral)}
+.rank{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)} .rank .pos{width:24px;font-weight:1000;color:#aab0b7} .rank .pts{margin-left:auto;font-weight:1000}
+.awards{display:grid;grid-template-columns:1fr 1fr;gap:9px} .award{background:#0f1318;border:1px solid var(--line);border-radius:18px;padding:13px;min-height:120px} .award .em{font-size:27px} .award b{display:block;margin:8px 0 3px;font-size:13px} .award span{font-size:9px;color:#969da6}
+.notice{padding:12px 13px;border-radius:15px;background:#111820;border:1px solid #24313b;color:#a9b6c0;font-size:10px;line-height:1.4}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#f6f3ef;color:#121416;border-radius:999px;padding:10px 14px;font-size:11px;font-weight:900;z-index:99;opacity:0;transition:.2s;pointer-events:none;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis} .toast.show{opacity:1}
+.onlineState{display:flex;align-items:center;gap:8px;font-size:10px;color:#aab0b7;margin-top:8px}
+.hostOnly{display:none} .isHost .hostOnly{display:block}
+.hidden{display:none!important}
+@media(min-width:700px){#app{box-shadow:0 0 80px rgba(0,0,0,.5)}}
+</style>
+</head>
+<body>
+<div id="app" class="safe">
+<div class="splash" id="splash"><div><img src="toofar_logo.png" alt="TOOFAR?"><small>JUDGE · DEBATE · CONNECT</small></div></div>
+<header class="top">
+  <button class="iconbtn" id="backBtn">←</button>
+  <div class="brand"><img src="toofar_logo.png"><span>TOOFAR<i>?</i></span></div>
+  <button class="iconbtn" id="profileBtn">☺</button>
+</header>
+
+<section class="screen" id="onboarding">
+  <div class="logoHero"><img src="toofar_logo.png"></div>
+  <div class="kicker">BENVENUTO</div><h1>Opinioni reali.<br>Amici veri.<br>Discussioni migliori.</h1>
+  <div class="card">
+    <div class="feature"><div class="em">🎮</div><div><b>Party Mode</b><span class="small muted">Crea una sala e gioca con amici sui loro telefoni.</span></div></div>
+    <div class="feature"><div class="em">👀</div><div><b>Voto segreto</b><span class="small muted">Nessuno vede la tua risposta prima del reveal.</span></div></div>
+    <div class="feature"><div class="em">🧠</div><div><b>Dibattito</b><span class="small muted">Non vince chi “ha ragione”: conta chi argomenta meglio.</span></div></div>
+  </div>
+  <button class="btn primary" id="startOnboarding">INIZIA</button>
+</section>
+
+<section class="screen" id="profileSetup">
+  <div class="kicker">IL TUO PROFILO</div><h2>Come ti chiami nella room?</h2>
+  <div class="card">
+    <div class="field"><label>NICKNAME</label><input id="nickname" maxlength="18" placeholder="Es. ChaosKing"></div>
+    <div class="field"><label>SCEGLI UN AVATAR</label><div class="avatars" id="avatarGrid"></div></div>
+  </div>
+  <div class="notice">Il profilo resta solo sul tuo telefono. Questa beta non richiede registrazione.</div>
+  <button class="btn primary" id="saveProfile">CONTINUA</button>
+</section>
+
+<section class="screen" id="home">
+  <div class="homeHero"><div class="kicker">TOOFAR? BETA</div><h1 id="helloTitle">Pronto per il caos?</h1><p class="muted">Crea una room e fai entrare gli amici con un codice. Funziona anche a distanza.</p><button class="btn primary" id="goParty">🎮 PLAY WITH FRIENDS</button></div>
+  <div class="modeGrid">
+    <button class="mode" id="quickJudge"><span class="emoji">👀</span><b>JUDGE</b><span>Una domanda veloce per rompere il ghiaccio.</span></button>
+    <button class="mode" id="openProfile"><span class="emoji">😈</span><b>TU</b><span>Nickname, avatar e statistiche locali.</span></button>
+  </div>
+  <div class="card"><h3>Come si prova con gli amici</h3><p class="small muted">1. Tutti installano TOOFAR? · 2. Una persona crea la room · 3. Condivide il codice · 4. Gli altri entrano · 5. L'host avvia la partita.</p></div>
+</section>
+
+<section class="screen" id="party">
+  <div class="kicker">PARTY MODE</div><h1>Una room.<br>Molte opinioni.</h1>
+  <div class="card"><button class="btn primary" id="createRoom">＋ CREA UNA ROOM</button><button class="btn secondary" id="joinRoomBtn">⌁ ENTRA CON CODICE</button></div>
+  <div class="notice">Le room della beta usano connessioni peer-to-peer. L'host deve restare nella sala durante la partita e tutti devono avere Internet.</div>
+</section>
+
+<section class="screen" id="join">
+  <div class="kicker">JOIN ROOM</div><h2>Inserisci il codice.</h2>
+  <div class="card"><div class="field"><label>CODICE ROOM</label><input id="joinCode" maxlength="8" placeholder="Es. F8K29Q"></div><div class="onlineState" id="joinNetState"><span class="statusDot off"></span>In attesa</div></div>
+  <button class="btn primary" id="joinNow">ENTRA NELLA ROOM</button>
+</section>
+
+<section class="screen" id="lobby">
+  <div class="kicker">LOBBY</div><h2>Siete pronti?</h2>
+  <div class="card center"><div class="tiny muted">ROOM CODE</div><div class="roomCode" id="roomCodeText">------</div><div class="onlineState" style="justify-content:center"><span class="statusDot"></span><span id="roomStatus">Connesso</span></div><button class="btn lime" id="shareRoom">CONDIVIDI CODICE</button></div>
+  <div class="card"><h3>Giocatori <span class="muted" id="playerCount"></span></h3><div class="players" id="playersGrid"></div></div>
+  <div class="hostOnly"><button class="btn primary" id="startTopics">INIZIA: VOTA I TEMI</button></div>
+  <button class="btn ghost" id="leaveRoom">ESCI DALLA ROOM</button>
+</section>
+
+<section class="screen" id="topics">
+  <div class="kicker">FASE 1 · TEMI</div><h2>Cosa volete discutere?</h2><p class="small muted">Scegli fino a 3 temi. L'host vedrà i più votati.</p>
+  <div class="card" id="topicList"></div>
+  <div class="card"><h3>Il tuo tema</h3><div class="field"><input id="customTopic" maxlength="28" placeholder="Es. Ex, lavoro, convivenza..."></div><button class="btn secondary" id="addTopic">＋ AGGIUNGI TEMA</button></div>
+  <button class="btn primary" id="submitTopics">CONFERMA I MIEI VOTI</button>
+  <div class="hostOnly"><button class="btn lime" id="hostContinueQuestions">CONTINUA ALLE DOMANDE</button></div>
+</section>
+
+<section class="screen" id="customQuestions">
+  <div class="kicker">FASE 2 · DOMANDE CUSTOM</div><h2>Getta benzina sul fuoco.</h2>
+  <div class="card"><textarea id="questionInput" maxlength="180" placeholder="Es. È accettabile controllare il telefono del partner se sospetti che ti tradisca?"></textarea><button class="btn secondary" id="submitCustomQuestion">INVIA ALLA ROOM</button></div>
+  <div class="card"><h3>Proposte della room</h3><div id="customQuestionList" class="small muted">Ancora nessuna.</div></div>
+  <div class="hostOnly"><div class="field"><label>NUMERO DI ROUND</label><input id="roundCount" type="number" min="3" max="12" value="6"></div><button class="btn primary" id="hostStartGame">START GAME</button></div>
+</section>
+
+<section class="screen" id="vote">
+  <div class="kicker" id="roundLabel">ROUND</div><span class="badge" id="questionBadge"></span><div class="question" id="questionText"></div>
+  <div class="card"><div class="lockbox">🔒 Le risposte restano segrete fino al reveal</div><div class="score" id="voteScore">50</div><input id="voteRange" type="range" min="0" max="100" value="50"><div class="rangeLabels"><span>CHILL</span><span>DIPENDE</span><span>TOO FAR</span></div><button class="btn primary" id="lockVote">BLOCCA RISPOSTA</button><div class="small muted center" id="voteWaiting"></div></div>
+  <div class="hostOnly"><button class="btn ghost" id="forceReveal">REVEAL ORA</button></div>
+</section>
+
+<section class="screen" id="reveal">
+  <div class="kicker">3 · 2 · 1 · REVEAL</div><h2 id="revealTitle">Ecco cosa pensa la room.</h2><div id="revealList"></div>
+  <div class="card" id="gapCard"></div>
+  <div class="hostOnly"><button class="btn primary" id="startDebate">START DEBATE</button></div>
+</section>
+
+<section class="screen" id="debate">
+  <div class="kicker">DEBATE TIME</div><h2>Convincete la stanza.</h2><div class="extremes" id="extremeCards"></div><div class="timer" id="debateTimer">60</div><p class="small muted center">Parlate dal vivo. L'obiettivo è difendere bene la posizione, non “vincere la verità”.</p>
+  <div class="hostOnly"><button class="btn primary" id="goArgVote">VOTA GLI ARGOMENTI</button></div>
+</section>
+
+<section class="screen" id="argVote">
+  <div class="kicker">ARGUMENT VOTE</div><h2>Chi ha argomentato meglio?</h2><p class="small muted">Puoi anche scegliere “nessuno”.</p><div id="argOptions"></div><button class="btn primary" id="submitArgVote">CONFERMA</button><div class="small muted center" id="argWaiting"></div>
+  <div class="hostOnly"><button class="btn ghost" id="forceRethink">CONTINUA</button></div>
+</section>
+
+<section class="screen" id="rethink">
+  <div class="kicker">STILL SURE?</div><h2>Qualcuno ti ha fatto cambiare idea?</h2>
+  <div class="card"><div class="tiny muted center">LA TUA RISPOSTA PRIMA</div><div class="score" id="oldScore">50</div><input id="rethinkRange" type="range" min="0" max="100" value="50"><div class="rangeLabels"><span>CHILL</span><span>DIPENDE</span><span>TOO FAR</span></div><button class="btn lime" id="submitRethink">SALVA</button></div>
+  <div class="small muted center" id="rethinkWaiting"></div>
+  <div class="hostOnly"><button class="btn ghost" id="forceSummary">CHIUDI ROUND</button></div>
+</section>
+
+<section class="screen" id="summary">
+  <div class="kicker">ROUND COMPLETE</div><h2>Il caos paga.</h2><div class="card"><h3>Punti del round</h3><div id="roundPoints"></div></div><div class="card"><h3>Momento del round</h3><div id="roundMoment"></div></div>
+  <div class="hostOnly"><button class="btn primary" id="nextRound">ROUND SUCCESSIVO</button></div>
+</section>
+
+<section class="screen" id="final">
+  <div class="kicker">THE CHAOS REPORT</div><h1>No winners.<br>Just evidence.</h1><div class="card"><div id="finalRanking"></div></div><div class="awards" id="awardsGrid"></div><button class="btn lime" id="shareReport">CONDIVIDI CHAOS REPORT</button><div class="hostOnly"><button class="btn primary" id="playAgain">GIOCA DI NUOVO</button></div>
+</section>
+
+<section class="screen" id="quick">
+  <div class="kicker" id="quickProgress">QUICK JUDGE · 1 / 24</div>
+  <span class="badge" id="quickBadge">🚩 RED FLAGS</span>
+  <div class="question" id="quickQuestion">Quanto è troppo?</div>
+  <div class="card">
+    <div class="score" id="quickScore">50</div>
+    <input id="quickRange" type="range" min="0" max="100" value="50">
+    <div class="rangeLabels"><span>CHILL</span><span>DIPENDE</span><span>TOO FAR</span></div>
+    <button class="btn primary" id="quickReveal">BLOCCA RISPOSTA</button>
+    <div id="quickResultBox" class="hidden" style="margin-top:14px">
+      <div class="notice center">
+        <b id="quickResultTitle">Risposta salvata.</b>
+        <div id="quickResult" class="small muted" style="margin-top:6px"></div>
+      </div>
+      <div class="onlineState" style="justify-content:center"><span class="statusDot"></span><span id="quickSavedCount">0 risposte salvate sul telefono</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="profile">
+  <div class="kicker">PROFILO LOCALE</div><h2 id="profileTitle"></h2><div class="card"><div class="field"><label>NICKNAME</label><input id="profileNickname" maxlength="18"></div><div class="field"><label>AVATAR</label><div class="avatars" id="profileAvatars"></div></div><button class="btn primary" id="profileSave">SALVA</button></div><div class="card"><h3>Statistiche sul telefono</h3><div id="localStats" class="small muted"></div></div>
+</section>
+
+<nav class="nav hidden" id="nav">
+<button data-nav="home"><b>⌂</b>Home</button>
+<button data-nav="party" class="party"><b>🎮</b>Party</button>
+<button data-nav="quick"><b>👀</b>Judge</button>
+<button data-nav="profile"><b>☺</b>Tu</button>
+</nav>
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+window.TOOFAR_QUESTIONS = [{"id": "r1", "cat": "Red Flags", "emoji": "🚩", "text": "Il tuo partner va a cena da solo con un ex e te lo dice soltanto dopo."}, {"id": "r2", "cat": "Red Flags", "emoji": "🚩", "text": "Una persona legge i messaggi del partner mentre dorme, senza permesso."}, {"id": "r3", "cat": "Red Flags", "emoji": "🚩", "text": "Il tuo partner cancella una chat perché pensa che potresti fraintenderla."}, {"id": "g1", "cat": "Gelosia", "emoji": "👀", "text": "Il tuo partner mette spesso like alle foto sexy del suo ex."}, {"id": "g2", "cat": "Gelosia", "emoji": "👀", "text": "La persona con cui stai frequentandoti mantiene un rapporto molto stretto con chi ci provava con lei."}, {"id": "g3", "cat": "Gelosia", "emoji": "👀", "text": "Chiedere la posizione in tempo reale al partner quando esce la sera."}, {"id": "m1", "cat": "Soldi", "emoji": "💸", "text": "In una coppia con stipendi molto diversi, tutte le spese comuni vengono divise esattamente 50/50."}, {"id": "m2", "cat": "Soldi", "emoji": "💸", "text": "Nascondere un acquisto costoso al partner per evitare una discussione."}, {"id": "m3", "cat": "Soldi", "emoji": "💸", "text": "Prestare una somma importante a un amico senza dirlo al partner."}, {"id": "h1", "cat": "Hot Takes", "emoji": "🔥", "text": "Restare amici con un ex è quasi sempre una cattiva idea."}, {"id": "h2", "cat": "Hot Takes", "emoji": "🔥", "text": "A volte una bugia può essere più rispettosa della verità."}, {"id": "h3", "cat": "Hot Takes", "emoji": "🔥", "text": "Essere sempre disponibili per gli amici è sopravvalutato."}, {"id": "moral1", "cat": "Morale", "emoji": "😈", "text": "Se trovi un portafoglio con molti contanti e nessun documento, tieni una parte prima di consegnarlo."}, {"id": "moral2", "cat": "Morale", "emoji": "😈", "text": "Leggere il diario di una persona se pensi che sia in pericolo."}, {"id": "moral3", "cat": "Morale", "emoji": "😈", "text": "Mentire a un amico per impedirgli di prendere una decisione che consideri disastrosa."}, {"id": "fam1", "cat": "Famiglia", "emoji": "🏠", "text": "I genitori del partner hanno una chiave di casa e possono entrare senza avvisare."}, {"id": "fam2", "cat": "Famiglia", "emoji": "🏠", "text": "Annullare un viaggio di coppia perché un familiare si sente escluso."}, {"id": "fam3", "cat": "Famiglia", "emoji": "🏠", "text": "Raccontare a tua madre i dettagli di una lite privata con il partner."}, {"id": "friend1", "cat": "Amicizia", "emoji": "🤝", "text": "Un amico stretto continua a frequentare una persona che ti ha trattato molto male."}, {"id": "friend2", "cat": "Amicizia", "emoji": "🤝", "text": "Organizzare una festa e non invitare un amico perché non va d'accordo con il resto del gruppo."}, {"id": "friend3", "cat": "Amicizia", "emoji": "🤝", "text": "Dire a un amico che il suo partner lo tradisce anche se hai solo forti sospetti."}, {"id": "sp1", "cat": "Spicy", "emoji": "🌶️", "text": "Flirtare con altre persone in vacanza è accettabile se non succede nulla di fisico."}, {"id": "sp2", "cat": "Spicy", "emoji": "🌶️", "text": "Conservare foto intime di un ex dopo l'inizio di una nuova relazione."}, {"id": "sp3", "cat": "Spicy", "emoji": "🌶️", "text": "Parlare apertamente con gli amici della propria vita sessuale di coppia senza chiedere al partner."}];
+</script>
+<script type="module">
+const Q = window.TOOFAR_QUESTIONS;
+const avatars = ['😈','🔥','🫣','👀','💀','🧠','🦄','🤡','🕶️','🧃','🫠','🦊'];
+const baseTopics = [
+  ['Red Flags','🚩'],['Gelosia','👀'],['Soldi','💸'],['Hot Takes','🔥'],['Morale','😈'],['Famiglia','🏠'],['Amicizia','🤝'],['Spicy','🌶️']
+];
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const randCode = () => Math.random().toString(36).slice(2,8).toUpperCase().replace(/[01OI]/g,'X').slice(0,6);
+const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
+const median = arr => {const a=[...arr].sort((x,y)=>x-y),m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2};
+const escapeHtml = s => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uuid = () => Math.random().toString(36).slice(2)+Date.now().toString(36);
+
+let profile = JSON.parse(localStorage.getItem('toofar_profile')||'null');
+let localStats = JSON.parse(localStorage.getItem('toofar_stats')||'{"parties":0,"rounds":0,"mindChanges":0}');
+let current='home', history=[];
+let room=null, selfId=null, roomId=null, isHost=false, hostPeerId=null;
+let profileAction,stateAction,cmdAction;
+let game=null;
+let selectedTopics = new Set();
+let selectedArg = null;
+let onboardingAvatar='😈';
+let networkModule=null;
+let deepLinkCode=null;
+let countdownTimer=null;
+let quickOrder = [];
+let quickPos = 0;
+let quickLocked = false;
+let quickAnswers = JSON.parse(localStorage.getItem('toofar_quick_answers')||'[]');
+
+function saveLocalStats(){localStorage.setItem('toofar_stats',JSON.stringify(localStats))}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600)}
+function show(id,push=true){
+  if(push && current!==id) history.push(current);
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  $('#'+id).classList.add('active'); current=id;
+  $('#backBtn').style.visibility=['onboarding','home'].includes(id)?'hidden':'visible';
+  const hideNav=['onboarding','profileSetup','join','lobby','topics','customQuestions','vote','reveal','debate','argVote','rethink','summary','final'];
+  $('#nav').classList.toggle('hidden',hideNav.includes(id));
+  render();
+  window.scrollTo(0,0);
+}
+function back(){
+  if(['lobby','topics','customQuestions','vote','reveal','debate','argVote','rethink','summary'].includes(current)){toast('Esci dalla room per tornare indietro');return}
+  const id=history.pop()||'home';show(id,false)
+}
+function setProfile(p){profile=p;localStorage.setItem('toofar_profile',JSON.stringify(profile));}
+function renderAvatarGrid(el,selected,cb){
+ el.innerHTML=avatars.map(a=>`<button class="avatarPick ${a===selected?'sel':''}" data-a="${a}">${a}</button>`).join('');
+ el.querySelectorAll('button').forEach(b=>b.onclick=()=>cb(b.dataset.a))
+}
+
+async function loadNetwork(){
+  if(networkModule) return networkModule;
+  $('#joinNetState').innerHTML='<span class="statusDot"></span>Connessione alla rete room…';
+  try{
+    networkModule = await import('https://esm.run/trystero@0.25.4');
+    return networkModule;
+  }catch(e){
+    console.error(e); throw new Error('Impossibile inizializzare le room. Controlla la connessione Internet.');
+  }
+}
+
+function freshGame(code){
+ return {
+  version:1, code, phase:'lobby', players:{}, topicVotes:{}, customTopics:[], customQuestions:[],
+  selectedTopics:[], deck:[], roundIndex:0,totalRounds:6,currentQuestion:null,responses:{},argVotes:{},rethinks:{},
+  debateEnds:0,extremes:null,roundDelta:{},lastMoment:'',createdAt:Date.now()
+ }
+}
+function ensurePlayer(g,id,p){
+ if(!g.players[id]) g.players[id]={name:p.name,avatar:p.avatar,score:0,joinedAt:Date.now(),metrics:{argumentsWon:0,mindChanges:0,hotTakes:0,rounds:0,variance:0}};
+ else Object.assign(g.players[id],{name:p.name,avatar:p.avatar});
+}
+function playerIds(){return game?Object.keys(game.players):[]}
+function myPlayer(){return game?.players?.[selfId]}
+function broadcastState(target=null){
+ if(!isHost||!stateAction) return;
+ try{stateAction.send(game,target?{target}:undefined)}catch(e){console.error(e)}
+}
+function hostApply(cmd,peer){
+ if(!isHost||!game) return;
+ ensurePlayer(game,peer,cmd.profile||game.players[peer]||{name:'Guest',avatar:'👀'});
+ const pids=Object.keys(game.players);
+ switch(cmd.type){
+  case 'topics':
+    game.topicVotes[peer]=cmd.topics.slice(0,3);
+    break;
+  case 'customTopic':
+    if(cmd.name && !game.customTopics.includes(cmd.name)) game.customTopics.push(cmd.name.slice(0,28));
+    break;
+  case 'customQuestion':
+    if(cmd.text) game.customQuestions.push({id:'c_'+uuid(),cat:'Custom',emoji:'✍️',text:cmd.text.slice(0,180),author:peer});
+    break;
+  case 'vote':
+    if(game.phase==='vote') game.responses[peer]=clamp(Number(cmd.value),0,100);
+    if(Object.keys(game.responses).length>=pids.length) hostReveal();
+    break;
+  case 'argVote':
+    if(game.phase==='argVote') game.argVotes[peer]=cmd.choice;
+    if(Object.keys(game.argVotes).length>=pids.length){game.phase='rethink';broadcastState();render()}
+    break;
+  case 'rethink':
+    if(game.phase==='rethink') game.rethinks[peer]=clamp(Number(cmd.value),0,100);
+    if(Object.keys(game.rethinks).length>=pids.length) finishRound();
+    break;
+ }
+ broadcastState();render()
+}
+function submit(cmd){
+ cmd.profile=profile;
+ if(isHost) hostApply(cmd,selfId);
+ else if(cmdAction) cmdAction.send(cmd);
+}
+
+async function connect(code,host){
+ try{
+   const mod=await loadNetwork();
+   selfId=mod.selfId; roomId=code; isHost=host;
+   room=mod.joinRoom({appId:'toofar-party-beta-2026-v1',password:'TOOFAR-'+code},code);
+   profileAction=room.makeAction('profile');
+   stateAction=room.makeAction('state');
+   cmdAction=room.makeAction('cmd');
+   if(host){game=freshGame(code);ensurePlayer(game,selfId,profile);hostPeerId=selfId}
+   profileAction.onMessage=(p,meta)=>{
+     const pid=meta.peerId;
+     if(p?.isHost) hostPeerId=pid;
+     if(isHost){ensurePlayer(game,pid,p);broadcastState()}
+   };
+   stateAction.onMessage=(s,meta)=>{
+     if(isHost) return;
+     if(s?.code===roomId){game=s;hostPeerId=meta.peerId;syncPhase()}
+   };
+   cmdAction.onMessage=(c,meta)=>{if(isHost)hostApply(c,meta.peerId)};
+   room.onPeerJoin=pid=>{
+     profileAction.send({...profile,isHost},{target:pid});
+     if(isHost)broadcastState(pid);
+   };
+   room.onPeerLeave=pid=>{
+     if(isHost && game?.players?.[pid]){delete game.players[pid];broadcastState();render()}
+     if(!isHost && pid===hostPeerId){toast('L’host ha lasciato la room');}
+   };
+   profileAction.send({...profile,isHost});
+   await sleep(700);
+   if(host)broadcastState();
+   show('lobby');
+ }catch(e){toast(e.message||'Connessione non riuscita');console.error(e)}
+}
+function leaveRoom(){
+ try{room?.leave()}catch(e){}
+ room=null;game=null;roomId=null;selfId=null;isHost=false;hostPeerId=null;selectedTopics.clear();show('party');
+}
+
+function syncPhase(){
+ if(!game)return;
+ const map={lobby:'lobby',topics:'topics',customQuestions:'customQuestions',vote:'vote',reveal:'reveal',debate:'debate',argVote:'argVote',rethink:'rethink',summary:'summary',final:'final'};
+ const target=map[game.phase];
+ if(target&&current!==target){if(target==='argVote')selectedArg=null;show(target,false)}else render();
+}
+function hostSetPhase(ph){if(!isHost)return;game.phase=ph;broadcastState();syncPhase()}
+function hostComputeTopics(){
+ const counts={};
+ Object.values(game.topicVotes).flat().forEach(t=>counts[t]=(counts[t]||0)+1);
+ const ranked=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+ game.selectedTopics=ranked.slice(0,4);
+ if(!game.selectedTopics.length)game.selectedTopics=['Red Flags','Gelosia','Hot Takes'];
+}
+function hostBuildDeck(){
+ hostComputeTopics();
+ let deck=Q.filter(q=>game.selectedTopics.includes(q.cat));
+ const custom=game.customQuestions;
+ deck=[...custom,...deck].sort(()=>Math.random()-.5);
+ if(deck.length<game.totalRounds)deck=[...deck,...Q.sort(()=>Math.random()-.5)];
+ game.deck=deck.slice(0,Math.max(game.totalRounds,3));
+}
+function hostStartGame(){
+ if(!isHost)return;
+ game.totalRounds=clamp(Number($('#roundCount').value)||6,3,12);
+ hostBuildDeck();game.roundIndex=0;startRound();
+}
+function startRound(){
+ game.currentQuestion=game.deck[game.roundIndex % game.deck.length];
+ game.responses={};game.argVotes={};game.rethinks={};game.extremes=null;game.roundDelta={};game.lastMoment='';
+ game.phase='vote';broadcastState();syncPhase()
+}
+function hostReveal(){
+ if(!isHost||!game||!Object.keys(game.responses).length)return;
+ const entries=Object.entries(game.responses).sort((a,b)=>a[1]-b[1]);
+ game.extremes={low:entries[0][0],high:entries[entries.length-1][0]};
+ game.phase='reveal';broadcastState();syncPhase()
+}
+function startDebate(){
+ if(!isHost)return;
+ game.debateEnds=Date.now()+60000;game.phase='debate';broadcastState();syncPhase()
+}
+function finishRound(){
+ if(!isHost)return;
+ const ids=Object.keys(game.responses), vals=ids.map(i=>game.responses[i]), med=median(vals);
+ const delta={}; ids.forEach(i=>delta[i]=10);
+ let hot=null,hotDist=-1;ids.forEach(i=>{const d=Math.abs(game.responses[i]-med);if(d>hotDist){hotDist=d;hot=i}});
+ if(hot){delta[hot]+=10;game.players[hot].metrics.hotTakes++}
+ const counts={};Object.values(game.argVotes).forEach(v=>counts[v]=(counts[v]||0)+1);
+ const choices=Object.entries(counts).filter(([k])=>k!=='none').sort((a,b)=>b[1]-a[1]);
+ const winner=choices[0]?.[0]||null;
+ if(winner&&game.players[winner]){delta[winner]=(delta[winner]||0)+25;game.players[winner].metrics.argumentsWon++}
+ let changed=0;
+ ids.forEach(i=>{
+   const before=game.responses[i],after=game.rethinks[i]??before;
+   if(Math.abs(after-before)>=10){changed++;localStats.mindChanges += i===selfId?1:0}
+ });
+ if(winner&&changed){const bonus=Math.min(30,changed*10);delta[winner]+=bonus;game.players[winner].metrics.mindChanges+=changed}
+ ids.forEach(i=>{game.players[i].score+=(delta[i]||0);game.players[i].metrics.rounds++;game.players[i].metrics.variance+=Math.abs(game.responses[i]-med)});
+ if(game.currentQuestion?.author && game.players[game.currentQuestion.author]){delta[game.currentQuestion.author]=(delta[game.currentQuestion.author]||0)+15;game.players[game.currentQuestion.author].score+=15}
+ game.roundDelta=delta;
+ game.lastMoment=winner?`${game.players[winner].avatar} ${game.players[winner].name} ha convinto di più la room.`:`🔥 Nessun argomento ha dominato il round.`;
+ game.phase='summary';broadcastState();syncPhase()
+}
+function nextRound(){
+ if(!isHost)return;
+ game.roundIndex++;
+ if(game.roundIndex>=game.totalRounds){game.phase='final';localStats.parties++;saveLocalStats();broadcastState();syncPhase()}
+ else startRound();
+}
+function titleFor(id){
+ const p=game.players[id],m=p.metrics||{};
+ const ids=Object.keys(game.players);
+ const max=(key)=>Math.max(...ids.map(x=>game.players[x].metrics?.[key]||0));
+ if((m.argumentsWon||0)>0 && m.argumentsWon===max('argumentsWon'))return['⚖️','AVVOCATO DEL DIAVOLO'];
+ if((m.mindChanges||0)>0 && m.mindChanges===max('mindChanges'))return['🧠','MIND CHANGER'];
+ if((m.hotTakes||0)>0 && m.hotTakes===max('hotTakes'))return['🔥','HOT TAKE MACHINE'];
+ if((m.variance||0)===Math.min(...ids.map(x=>game.players[x].metrics?.variance||0)))return['🕊️','SWITZERLAND'];
+ return['💀','CHAOS AGENT'];
+}
+
+function makeQuickOrder(){
+  const ids=Q.map((_,i)=>i);
+  for(let i=ids.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]]}
+  return ids;
+}
+function quickLabel(v){
+  if(v>=85)return ['🚩 DEFINITELY TOO FAR','Per te supera chiaramente il limite.'];
+  if(v>=65)return ['😬 MOLTO SKETCHY','Per te è una situazione decisamente problematica.'];
+  if(v>=40)return ['🤔 DIPENDE','Per te il contesto può cambiare parecchio il giudizio.'];
+  if(v>=20)return ['🙂 QUASI CHILL','Ti disturba, ma non abbastanza da definirlo TOO FAR.'];
+  return ['😌 CHILL','Per te questa situazione non supera il limite.'];
+}
+function renderQuick(){
+  if(!quickOrder.length) quickOrder=makeQuickOrder();
+  const q=Q[quickOrder[quickPos]];
+  if(!q)return;
+  $('#quickProgress').textContent=`QUICK JUDGE · ${quickPos+1} / ${Q.length}`;
+  $('#quickBadge').textContent=`${q.emoji} ${q.cat.toUpperCase()}`;
+  $('#quickQuestion').textContent=q.text;
+  $('#quickRange').disabled=quickLocked;
+  $('#quickResultBox').classList.toggle('hidden',!quickLocked);
+  $('#quickReveal').textContent=quickLocked?'PROSSIMA DOMANDA →':'BLOCCA RISPOSTA';
+  if(quickLocked){
+    const v=Number($('#quickRange').value);
+    const [title,copy]=quickLabel(v);
+    $('#quickResultTitle').textContent=title;
+    $('#quickResult').textContent=copy;
+  }
+  $('#quickSavedCount').textContent=`${quickAnswers.length} ${quickAnswers.length===1?'risposta salvata':'risposte salvate'} sul telefono`;
+}
+function nextQuickQuestion(){
+  quickPos++;
+  if(quickPos>=quickOrder.length){quickOrder=makeQuickOrder();quickPos=0;toast('Nuovo giro di domande 🔥')}
+  quickLocked=false;
+  $('#quickRange').disabled=false;
+  $('#quickRange').value=50;
+  $('#quickScore').textContent='50';
+  renderQuick();
+}
+
+function render(){
+ $('#app').classList.toggle('isHost',isHost);
+ if(profile){$('#helloTitle').textContent=`Ciao ${profile.name}. Quanto è troppo?`;$('#profileTitle').textContent=`${profile.name} ${profile.avatar}`;}
+ if(current==='lobby'&&game){
+  $('#roomCodeText').textContent=game.code;$('#playerCount').textContent=`(${playerIds().length})`;
+  $('#playersGrid').innerHTML=playerIds().map(id=>{const p=game.players[id];return `<div class="player"><div class="av">${p.avatar}</div><b>${escapeHtml(p.name)}</b>${id===hostPeerId?'<span class="hostBadge">HOST</span>':''}</div>`}).join('');
+  $('#roomStatus').textContent=`${playerIds().length} connessi`;
+ }
+ if(current==='topics'&&game){
+   const all=[...baseTopics.map(x=>x[0]),...game.customTopics];
+   const counts={};Object.values(game.topicVotes).flat().forEach(t=>counts[t]=(counts[t]||0)+1);
+   $('#topicList').innerHTML=all.map(t=>{const em=baseTopics.find(x=>x[0]===t)?.[1]||'✍️';return `<div class="topic"><div class="grow"><b>${em} ${escapeHtml(t)}</b><div class="tiny muted">${counts[t]||0} voti</div></div><button class="topicVote ${selectedTopics.has(t)?'on':''}" data-topic="${escapeHtml(t)}">${selectedTopics.has(t)?'✓':'+'}</button></div>`}).join('');
+   $('#topicList').querySelectorAll('button').forEach(b=>b.onclick=()=>{const t=b.dataset.topic;if(selectedTopics.has(t))selectedTopics.delete(t);else if(selectedTopics.size<3)selectedTopics.add(t);else toast('Massimo 3 temi');render()});
+ }
+ if(current==='customQuestions'&&game){
+   $('#customQuestionList').innerHTML=game.customQuestions.length?game.customQuestions.map(q=>`<div class="topic"><div class="grow"><b>${escapeHtml(q.text)}</b><div class="tiny muted">Domanda room</div></div><span>🔥</span></div>`).join(''):'Ancora nessuna.';
+ }
+ if(current==='vote'&&game?.currentQuestion){
+   $('#roundLabel').textContent=`ROUND ${game.roundIndex+1} / ${game.totalRounds}`;
+   $('#questionBadge').textContent=`${game.currentQuestion.emoji||'✍️'} ${game.currentQuestion.cat}`;
+   $('#questionText').textContent=game.currentQuestion.text;
+   const done=game.responses[selfId]!=null;
+   $('#lockVote').disabled=done;$('#lockVote').textContent=done?'RISPOSTA BLOCCATA ✓':'BLOCCA RISPOSTA';
+   $('#voteWaiting').textContent=done?`${Object.keys(game.responses).length}/${playerIds().length} hanno risposto`:'';
+ }
+ if(current==='reveal'&&game){
+   const ent=Object.entries(game.responses).sort((a,b)=>b[1]-a[1]);
+   $('#revealList').innerHTML=ent.map(([id,v])=>{const p=game.players[id];return `<div class="reveal"><div><div class="who"><span>${p.avatar}</span><b>${escapeHtml(p.name)}</b></div><div class="bar"><i style="width:${v}%"></i></div></div><strong>${v}</strong></div>`}).join('');
+   if(ent.length>1){const hi=ent[0],lo=ent[ent.length-1],gap=hi[1]-lo[1];$('#gapCard').innerHTML=`<b>🔥 BIGGEST GAP: ${gap} punti</b><p class="small muted">${escapeHtml(game.players[hi[0]].name)} e ${escapeHtml(game.players[lo[0]].name)} siete agli estremi.</p>`} else $('#gapCard').textContent='Serve almeno un’altra persona per il dibattito.';
+ }
+ if(current==='debate'&&game?.extremes){
+   const lo=game.extremes.low,hi=game.extremes.high;
+   $('#extremeCards').innerHTML=[hi,lo].map(id=>`<div class="extreme"><div class="av">${game.players[id].avatar}</div><b>${escapeHtml(game.players[id].name)}</b><strong>${game.responses[id]}</strong></div>`).join('');
+   startCountdown();
+ }
+ if(current==='argVote'&&game?.extremes){
+   const a=game.extremes.high,b=game.extremes.low;
+   const opts=[a,b,'none'];
+   $('#argOptions').innerHTML=opts.map(id=>id==='none'?`<div class="option">💀 <div class="grow"><b>Nessuno</b><div class="tiny muted">Non mi avete convinto.</div></div><button data-choice="none" class="${selectedArg==='none'?'sel':''}">VOTA</button></div>`:`<div class="option">${game.players[id].avatar} <div class="grow"><b>${escapeHtml(game.players[id].name)}</b><div class="tiny muted">Argomento</div></div><button data-choice="${id}" class="${selectedArg===id?'sel':''}">VOTA</button></div>`).join('');
+   $('#argOptions').querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedArg=b.dataset.choice;render()});
+   const done=game.argVotes[selfId]!=null;$('#submitArgVote').disabled=done;$('#argWaiting').textContent=done?`${Object.keys(game.argVotes).length}/${playerIds().length} hanno votato`:'';
+ }
+ if(current==='rethink'&&game){
+   const old=game.responses[selfId]??50;$('#oldScore').textContent=old;if(game.rethinks[selfId]==null)$('#rethinkRange').value=old;
+   const done=game.rethinks[selfId]!=null;$('#submitRethink').disabled=done;$('#rethinkWaiting').textContent=done?`${Object.keys(game.rethinks).length}/${playerIds().length} pronti`:'';
+ }
+ if(current==='summary'&&game){
+   $('#roundPoints').innerHTML=Object.entries(game.roundDelta).sort((a,b)=>b[1]-a[1]).map(([id,v])=>`<div class="pointRow"><span>${game.players[id].avatar}</span><b>${escapeHtml(game.players[id].name)}</b><span class="pts">+${v}</span></div>`).join('');
+   $('#roundMoment').innerHTML=`<p class="small">${escapeHtml(game.lastMoment)}</p>`;
+   $('#nextRound').textContent=game.roundIndex+1>=game.totalRounds?'VEDI CHAOS REPORT':'ROUND SUCCESSIVO';
+ }
+ if(current==='final'&&game){
+   const rank=Object.entries(game.players).sort((a,b)=>b[1].score-a[1].score);
+   $('#finalRanking').innerHTML=rank.map(([id,p],i)=>{const t=titleFor(id);return `<div class="rank"><span class="pos">${i+1}</span><span>${p.avatar}</span><div class="grow"><b>${escapeHtml(p.name)}</b><div class="titleTag">${t[1]}</div></div><span class="pts">${p.score}</span></div>`}).join('');
+   $('#awardsGrid').innerHTML=rank.slice(0,4).map(([id,p])=>{const t=titleFor(id);return `<div class="award"><div class="em">${t[0]}</div><b>${t[1]}</b><span>${escapeHtml(p.name)}</span></div>`}).join('');
+ }
+ if(current==='quick'){renderQuick();}
+ if(current==='profile'&&profile){
+   $('#profileNickname').value=profile.name;renderAvatarGrid($('#profileAvatars'),profile.avatar,a=>{profile.avatar=a;render()});
+   $('#localStats').innerHTML=`Party completate: <b>${localStats.parties}</b><br>Round giocati: <b>${localStats.rounds}</b><br>Cambi idea: <b>${localStats.mindChanges}</b>`;
+ }
+}
+function startCountdown(){
+ clearInterval(countdownTimer);
+ const tick=()=>{const n=Math.max(0,Math.ceil((game.debateEnds-Date.now())/1000));$('#debateTimer').textContent=n;if(!n)clearInterval(countdownTimer)};
+ tick();countdownTimer=setInterval(tick,500);
+}
+
+function shareText(text){
+ if(window.NativeShare?.share) window.NativeShare.share(text);
+ else if(navigator.share) navigator.share({text});
+ else navigator.clipboard?.writeText(text).then(()=>toast('Copiato'));
+}
+
+$('#backBtn').onclick=back;$('#profileBtn').onclick=()=>show('profile');
+$('#startOnboarding').onclick=()=>show('profileSetup');
+function renderOnboardingAvatars(){renderAvatarGrid($('#avatarGrid'),onboardingAvatar,a=>{onboardingAvatar=a;renderOnboardingAvatars()})}
+renderOnboardingAvatars();
+$('#saveProfile').onclick=()=>{const name=$('#nickname').value.trim();if(name.length<2)return toast('Inserisci un nickname');setProfile({name,avatar:onboardingAvatar});show('home')};
+$('#goParty').onclick=()=>show('party');$('#quickJudge').onclick=()=>show('quick');$('#openProfile').onclick=()=>show('profile');
+$('#createRoom').onclick=()=>connect(randCode(),true);$('#joinRoomBtn').onclick=()=>show('join');
+$('#joinNow').onclick=()=>{const c=$('#joinCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);if(c.length<4)return toast('Codice non valido');connect(c,false)};
+$('#shareRoom').onclick=()=>shareText(`TOOFAR? PARTY — entra nella room ${game.code}. Apri TOOFAR? e inserisci il codice. Link app: toofar://room/${game.code}`);
+$('#leaveRoom').onclick=leaveRoom;
+$('#startTopics').onclick=()=>hostSetPhase('topics');
+$('#addTopic').onclick=()=>{const n=$('#customTopic').value.trim();if(!n)return;submit({type:'customTopic',name:n});$('#customTopic').value='';toast('Tema aggiunto')};
+$('#submitTopics').onclick=()=>{submit({type:'topics',topics:[...selectedTopics]});toast('Voti inviati')};
+$('#hostContinueQuestions').onclick=()=>{if(isHost){hostComputeTopics();hostSetPhase('customQuestions')}};
+$('#submitCustomQuestion').onclick=()=>{const t=$('#questionInput').value.trim();if(t.length<8)return toast('Scrivi una domanda più completa');submit({type:'customQuestion',text:t});$('#questionInput').value='';toast('Domanda inviata')};
+$('#hostStartGame').onclick=hostStartGame;
+$('#voteRange').oninput=e=>$('#voteScore').textContent=e.target.value;
+$('#lockVote').onclick=()=>{submit({type:'vote',value:Number($('#voteRange').value)});localStats.rounds++;saveLocalStats();render()};
+$('#forceReveal').onclick=hostReveal;
+$('#startDebate').onclick=startDebate;
+$('#goArgVote').onclick=()=>hostSetPhase('argVote');
+$('#submitArgVote').onclick=()=>{if(!selectedArg)return toast('Scegli un’opzione');submit({type:'argVote',choice:selectedArg});render()};
+$('#forceRethink').onclick=()=>hostSetPhase('rethink');
+$('#submitRethink').onclick=()=>{submit({type:'rethink',value:Number($('#rethinkRange').value)});render()};
+$('#forceSummary').onclick=finishRound;
+$('#nextRound').onclick=nextRound;
+$('#shareReport').onclick=()=>{const top=Object.values(game.players).sort((a,b)=>b.score-a.score).slice(0,3).map((p,i)=>`${i+1}. ${p.name} ${p.score}pt`).join(' · ');shareText(`TOOFAR? CHAOS REPORT — ${top} — No winners. Just evidence.`)};
+$('#playAgain').onclick=()=>{if(isHost){const oldPlayers=game.players;game=freshGame(roomId);game.players=oldPlayers;Object.values(game.players).forEach(p=>{p.score=0;p.metrics={argumentsWon:0,mindChanges:0,hotTakes:0,rounds:0,variance:0}});broadcastState();syncPhase()}};
+$('#quickRange').oninput=e=>{if(!quickLocked)$('#quickScore').textContent=e.target.value};
+$('#quickReveal').onclick=()=>{
+  if(quickLocked){nextQuickQuestion();return}
+  if(!quickOrder.length)quickOrder=makeQuickOrder();
+  const q=Q[quickOrder[quickPos]];
+  const v=Number($('#quickRange').value);
+  quickAnswers.push({questionId:q.id,value:v,at:Date.now()});
+  if(quickAnswers.length>250)quickAnswers=quickAnswers.slice(-250);
+  localStorage.setItem('toofar_quick_answers',JSON.stringify(quickAnswers));
+  quickLocked=true;
+  renderQuick();
+};
+$('#profileSave').onclick=()=>{const n=$('#profileNickname').value.trim();if(n.length<2)return toast('Nickname troppo corto');profile.name=n;setProfile(profile);toast('Profilo salvato');render()};
+$$('[data-nav]').forEach(b=>b.onclick=()=>show(b.dataset.nav));
+
+window.TOOFAR_BACK=back;
+window.openRoomFromNative=(code)=>{deepLinkCode=String(code||'').toUpperCase();if(profile){$('#joinCode').value=deepLinkCode;show('join')}};
+setTimeout(()=>$('#splash').classList.add('hide'),900);
+if(profile){show('home',false)} else {show('onboarding',false)}
+render();
+</script>
+</body></html>
