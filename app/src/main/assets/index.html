@@ -87,7 +87,7 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
 </section>
 
 <section class="screen" id="home">
-  <div class="homeHero"><div class="kicker">TOOFAR? BETA</div><h1 id="helloTitle">Pronto per il caos?</h1><p class="muted">Crea una room e fai entrare gli amici con un codice. Funziona da reti e Paesi diversi.</p><button class="btn primary" id="goParty">🎮 PLAY WITH FRIENDS</button></div>
+  <div class="homeHero"><div class="kicker">TOOFAR? BETA 4.1 · SERVER GM</div><h1 id="helloTitle">Pronto per il caos?</h1><p class="muted">Crea una room e fai entrare gli amici con un codice. Funziona da reti e Paesi diversi.</p><button class="btn primary" id="goParty">🎮 PLAY WITH FRIENDS</button></div>
   <div class="modeGrid">
     <button class="mode" id="quickJudge"><span class="emoji">👀</span><b>JUDGE</b><span>Una domanda veloce per rompere il ghiaccio.</span></button>
     <button class="mode" id="openProfile"><span class="emoji">😈</span><b>TU</b><span>Nickname, avatar e statistiche locali.</span></button>
@@ -116,7 +116,7 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
 </section>
 
 <section class="screen" id="topics">
-  <div class="kicker">FASE 1 · TEMI</div><h2>Cosa volete discutere?</h2><p class="small muted">Scegli fino a 3 temi. L'host vedrà i più votati.</p>
+  <div class="kicker">FASE 1 · TEMI</div><h2>Cosa volete discutere?</h2><p class="small muted">Scegli tutti i temi che vuoi. La room costruirà la partita dai più votati.</p>
   <div class="card" id="topicList"></div>
   <div class="card"><h3>Il tuo tema</h3><div class="field"><input id="customTopic" maxlength="28" placeholder="Es. Ex, lavoro, convivenza..."></div><button class="btn secondary" id="addTopic">＋ AGGIUNGI TEMA</button></div>
   <button class="btn primary" id="submitTopics">CONFERMA I MIEI VOTI</button>
@@ -281,7 +281,7 @@ let playerToken=null;
 let pollTimer=null;
 let refreshing=false;
 let hostDeck=[];
-let phaseSeen='',phaseSince=0,autoBusy=false;
+const APP_BUILD='4.1-server-gm';
 
 async function rpc(name,payload={}){
   const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{
@@ -329,6 +329,8 @@ function adaptState(s){
     selectedTopics:s.room.selected_topics||[],
     currentQuestion:s.room.current_question,
     debateEnds:s.room.debate_ends?Date.parse(s.room.debate_ends):0,
+    phaseEndsAt:s.room.phase_ends_at?Date.parse(s.room.phase_ends_at):0,
+    questionsPerRound:Number(s.room.questions_per_round||1),
     roundDelta:s.room.round_delta||{},
     lastMoment:s.room.last_moment||'',
     version:Number(s.room.version||1),
@@ -395,30 +397,10 @@ async function leaveRoom(){
 
 function syncPhase(){
  if(!game)return;
- if(phaseSeen!==game.phase+'-'+game.roundIndex){phaseSeen=game.phase+'-'+game.roundIndex;phaseSince=Date.now()}
+ questionsPerRound=game.questionsPerRound||questionsPerRound||1;
  const map={lobby:'lobby',topics:'topics',customQuestions:'customQuestions',vote:'vote',reveal:'reveal',debate:'debate',argVote:'argVote',rethink:'rethink',summary:'summary',final:'final'};
  const target=map[game.phase];
  if(target&&current!==target){if(target==='argVote')selectedArg=null;show(target,false)}else render();
- autopilot();
-}
-async function autoMove(expected,next,extra={}){
- if(autoBusy||!roomId)return;autoBusy=true;
- try{await rpc('toofar_auto_advance',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_expected_phase:expected,p_next_phase:next,p_next_round:extra.round??null,p_question:extra.question??null,p_debate_seconds:extra.seconds??null});await refreshState(true)}catch(e){console.warn('autopilot',e)}finally{autoBusy=false}
-}
-function deterministicDeck(){
- hostBuildDeck(); return hostDeck;
-}
-function autopilot(){
- if(!game||autoBusy)return; const elapsed=Date.now()-phaseSince;
- if(game.phase==='vote'&&elapsed>30000) autoMove('vote','reveal');
- else if(game.phase==='reveal'&&elapsed>7000) autoMove('reveal','debate',{seconds:45});
- else if(game.phase==='argVote'&&elapsed>15000) autoMove('arg_vote','rethink');
- else if(game.phase==='rethink'&&elapsed>15000) autoMove('rethink','summary');
- else if(game.phase==='summary'&&elapsed>7000){
-   const next=game.roundIndex+1;
-   if(next>=game.totalRounds) autoMove('summary','final');
-   else {const deck=deterministicDeck();const q=deck[next%deck.length]||Q[next%Q.length];autoMove('summary','vote',{round:next,question:q})}
- }
 }
 async function hostSetPhase(ph){
   if(!isHost)return;
@@ -568,7 +550,7 @@ function render(){
    $('#questionText').textContent=game.currentQuestion.text;
    const done=game.responses[selfId]!=null;
    $('#lockVote').disabled=done;$('#lockVote').textContent=done?'RISPOSTA BLOCCATA ✓':'BLOCCA RISPOSTA';
-   $('#voteWaiting').textContent=done?`${game.counts?.answers||Object.keys(game.responses).length}/${game.counts?.players||playerIds().length} hanno risposto`:'';
+   {const left=game.phaseEndsAt?Math.max(0,Math.ceil((game.phaseEndsAt-Date.now())/1000)):0; $('#voteWaiting').textContent=(done?`${game.counts?.answers||Object.keys(game.responses).length}/${game.counts?.players||playerIds().length} hanno risposto · `:'')+`Game Master: ${left}s`;}
  }
  if(current==='reveal'&&game){
    const ent=Object.entries(game.responses).sort((a,b)=>b[1]-a[1]);
@@ -606,6 +588,8 @@ function render(){
    startCountdown();
  }
  if(current==='argVote'&&game?.extremes){
+   const participating=game.responses[selfId]!=null;
+   $('#submitArgVote').classList.toggle('hidden',!participating);
    const vals=Object.entries(game.responses),med=median(vals.map(x=>x[1])),dev=vals.map(([id,v])=>({id,v,d:Math.abs(v-med)})).sort((a,b)=>b.d-a.d);
    const lone=vals.length>=3 && dev[0].d>=35 && (dev[0].d-(dev[1]?.d||0)>=10);
    let opts;
@@ -623,6 +607,9 @@ function render(){
    const done=game.argVotes[selfId]!=null;$('#submitArgVote').disabled=done;$('#argWaiting').textContent=done?`${game.counts?.argument_votes||Object.keys(game.argVotes).length}/${game.counts?.players||playerIds().length} hanno votato`:'';
  }
  if(current==='rethink'&&game){
+   const participating=game.responses[selfId]!=null;
+   $('#submitRethink').classList.toggle('hidden',!participating);
+   $('#rethinkRange').disabled=!participating;
    const old=game.responses[selfId]??50;$('#oldScore').textContent=old;if(game.rethinks[selfId]==null)$('#rethinkRange').value=old;
    const done=game.rethinks[selfId]!=null;$('#submitRethink').disabled=done;$('#rethinkWaiting').textContent=done?`${game.counts?.rethinks||Object.keys(game.rethinks).length}/${game.counts?.players||playerIds().length} pronti`:'';
  }
@@ -684,7 +671,7 @@ $('#submitRethink').onclick=()=>{submit({type:'rethink',value:Number($('#rethink
 if($('#forceSummary')) $('#forceSummary').onclick=finishRound;
 if($('#nextRound')) $('#nextRound').onclick=nextRound;
 $('#shareReport').onclick=()=>{const top=Object.values(game.players).sort((a,b)=>b.score-a.score).slice(0,3).map((p,i)=>`${i+1}. ${p.name} ${p.score}pt`).join(' · ');shareText(`TOOFAR? CHAOS REPORT — ${top} — No winners. Just evidence.`)};
-$('#playAgain').onclick=()=>{if(isHost){const oldPlayers=game.players;game=freshGame(roomId);game.players=oldPlayers;Object.values(game.players).forEach(p=>{p.score=0;p.metrics={argumentsWon:0,mindChanges:0,hotTakes:0,rounds:0,variance:0}});broadcastState();syncPhase()}};
+$('#playAgain').onclick=()=>{toast('Nuova room consigliata per una nuova partita');};
 $('#quickRange').oninput=e=>{if(!quickLocked)$('#quickScore').textContent=e.target.value};
 $('#quickReveal').onclick=()=>{
   if(quickLocked){nextQuickQuestion();return}
@@ -706,6 +693,8 @@ setTimeout(()=>$('#splash').classList.add('hide'),900);
 if(profile){
   show('home',false);
   try{
+    const prevBuild=localStorage.getItem('toofar_app_build');
+    if(prevBuild!==APP_BUILD){ localStorage.removeItem('toofar_room_session'); localStorage.setItem('toofar_app_build',APP_BUILD); }
     const saved=JSON.parse(localStorage.getItem('toofar_room_session')||'null');
     if(saved?.code&&saved?.player_id&&saved?.player_token){
       roomId=saved.code;selfId=saved.player_id;playerToken=saved.player_token;isHost=!!saved.is_host;
