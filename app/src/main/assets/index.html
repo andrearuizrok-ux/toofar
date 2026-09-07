@@ -64,6 +64,8 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
 </header>
 
 <section class="screen" id="onboarding">
+  <div class="card" id="languageCard"><div class="kicker">LANGUAGE · IDIOMA · LINGUA</div><h3>Choose your language</h3>
+  <div class="chips"><button class="chip langPick" data-lang="it">🇮🇹 Italiano</button><button class="chip langPick" data-lang="es">🇪🇸 Español</button><button class="chip langPick" data-lang="en">🇬🇧 English</button></div></div>
   <div class="logoHero"><img src="toofar_logo.png"></div>
   <div class="kicker">BENVENUTO</div><h1>Opinioni reali.<br>Amici veri.<br>Discussioni migliori.</h1>
   <div class="card">
@@ -96,7 +98,7 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
 <section class="screen" id="party">
   <div class="kicker">PARTY MODE</div><h1>Una room.<br>Molte opinioni.</h1>
   <div class="card"><button class="btn primary" id="createRoom">＋ CREA UNA ROOM</button><button class="btn secondary" id="joinRoomBtn">⌁ ENTRA CON CODICE</button></div>
-  <div class="notice">Le room della beta usano connessioni peer-to-peer. L'host deve restare nella sala durante la partita e tutti devono avere Internet.</div>
+  <div class="notice">Le room della beta usano room cloud. Funzionano anche su reti e Paesi diversi. Serve Internet.</div>
 </section>
 
 <section class="screen" id="join">
@@ -125,7 +127,11 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
   <div class="kicker">FASE 2 · DOMANDE CUSTOM</div><h2>Getta benzina sul fuoco.</h2>
   <div class="card"><textarea id="questionInput" maxlength="180" placeholder="Es. È accettabile controllare il telefono del partner se sospetti che ti tradisca?"></textarea><button class="btn secondary" id="submitCustomQuestion">INVIA ALLA ROOM</button></div>
   <div class="card"><h3>Proposte della room</h3><div id="customQuestionList" class="small muted">Ancora nessuna.</div></div>
-  <div class="hostOnly"><div class="field"><label>NUMERO DI ROUND</label><input id="roundCount" type="number" min="3" max="12" value="6"></div><button class="btn primary" id="hostStartGame">START GAME</button></div>
+  <div class="hostOnly"><div class="card"><h3>🎛️ Game setup</h3>
+<div class="field"><label>NUMERO DI ROUND</label><input id="roundCount" type="number" min="1" max="10" value="3"></div>
+<div class="field"><label>DOMANDE PER ROUND</label><input id="questionsPerRound" type="number" min="1" max="5" value="2"></div>
+<div class="notice">Esempio: 3 round × 2 domande = 6 situazioni. Gli eventi Chaos cambiano il ritmo automaticamente.</div></div>
+<button class="btn primary" id="hostStartGame">START GAME 🔥</button></div>
 </section>
 
 <section class="screen" id="vote">
@@ -136,7 +142,7 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
 
 <section class="screen" id="reveal">
   <div class="kicker">3 · 2 · 1 · REVEAL</div><h2 id="revealTitle">Ecco cosa pensa la room.</h2><div id="revealList"></div>
-  <div class="card" id="gapCard"></div>
+  <div class="card" id="gapCard"></div><div class="card hidden" id="chaosEventCard"></div>
   <div class="hostOnly"><button class="btn primary" id="startDebate">START DEBATE</button></div>
 </section>
 
@@ -232,6 +238,15 @@ let quickOrder = [];
 let quickPos = 0;
 let quickLocked = false;
 let quickAnswers = JSON.parse(localStorage.getItem('toofar_quick_answers')||'[]');
+let appLang=localStorage.getItem('toofar_lang')||'it';
+let questionsPerRound=Number(localStorage.getItem('toofar_qpr')||2);
+const I18N={
+ it:{hello:'Quanto è troppo?',contro:'HOT TAKE DETECTED',defend:'DIFENDI LA TUA POSIZIONE',convince:'Hai 45 secondi. Fai cambiare idea alla room.',yes:'MI HA CONVINTO',no:'NON MI HA CONVINTO'},
+ es:{hello:'¿Cuánto es demasiado?',contro:'HOT TAKE DETECTED',defend:'DEFIENDE TU POSICIÓN',convince:'Tienes 45 segundos. Haz cambiar de opinión al grupo.',yes:'ME CONVENCIÓ',no:'NO ME CONVENCIÓ'},
+ en:{hello:'How far is too far?',contro:'HOT TAKE DETECTED',defend:'DEFEND YOUR TAKE',convince:'You have 45 seconds. Change the room’s mind.',yes:'CONVINCED ME',no:'DIDN’T CONVINCE ME'}
+};
+const tr=k=>(I18N[appLang]||I18N.it)[k]||k;
+
 
 function saveLocalStats(){localStorage.setItem('toofar_stats',JSON.stringify(localStats))}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600)}
@@ -399,7 +414,10 @@ function hostBuildDeck(){
 }
 async function hostStartGame(){
  if(!isHost)return;
- game.totalRounds=clamp(Number($('#roundCount').value)||6,3,12);
+ const rounds=clamp(Number($('#roundCount').value)||3,1,10);
+ questionsPerRound=clamp(Number($('#questionsPerRound').value)||2,1,5);
+ localStorage.setItem('toofar_qpr',questionsPerRound);
+ game.totalRounds=clamp(rounds*questionsPerRound,1,20);
  hostBuildDeck();
  const q=hostDeck[0]||Q[0];
  await rpc('toofar_host_update',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_phase:'vote',p_round_index:0,p_total_rounds:game.totalRounds,p_question:q,p_selected_topics:game.selectedTopics,p_debate_seconds:null});
@@ -512,7 +530,10 @@ function render(){
    $('#customQuestionList').innerHTML=game.customQuestions.length?game.customQuestions.map(q=>`<div class="topic"><div class="grow"><b>${escapeHtml(q.text)}</b><div class="tiny muted">Domanda room</div></div><span>🔥</span></div>`).join(''):'Ancora nessuna.';
  }
  if(current==='vote'&&game?.currentQuestion){
-   $('#roundLabel').textContent=`ROUND ${game.roundIndex+1} / ${game.totalRounds}`;
+   const displayRound=Math.floor(game.roundIndex/questionsPerRound)+1;
+   const totalDisplayRounds=Math.ceil(game.totalRounds/questionsPerRound);
+   const qInRound=(game.roundIndex%questionsPerRound)+1;
+   $('#roundLabel').textContent=`ROUND ${displayRound} / ${totalDisplayRounds} · Q ${qInRound}/${questionsPerRound}`;
    $('#questionBadge').textContent=`${game.currentQuestion.emoji||'✍️'} ${game.currentQuestion.cat}`;
    $('#questionText').textContent=game.currentQuestion.text;
    const done=game.responses[selfId]!=null;
@@ -522,17 +543,52 @@ function render(){
  if(current==='reveal'&&game){
    const ent=Object.entries(game.responses).sort((a,b)=>b[1]-a[1]);
    $('#revealList').innerHTML=ent.map(([id,v])=>{const p=game.players[id];return `<div class="reveal"><div><div class="who"><span>${p.avatar}</span><b>${escapeHtml(p.name)}</b></div><div class="bar"><i style="width:${v}%"></i></div></div><strong>${v}</strong></div>`}).join('');
-   if(ent.length>1){const hi=ent[0],lo=ent[ent.length-1],gap=hi[1]-lo[1];$('#gapCard').innerHTML=`<b>🔥 BIGGEST GAP: ${gap} punti</b><p class="small muted">${escapeHtml(game.players[hi[0]].name)} e ${escapeHtml(game.players[lo[0]].name)} siete agli estremi.</p>`} else $('#gapCard').textContent='Serve almeno un’altra persona per il dibattito.';
+   if(ent.length>1){
+     const hi=ent[0],lo=ent[ent.length-1],gap=hi[1]-lo[1], vals=ent.map(x=>x[1]), med=median(vals);
+     $('#gapCard').innerHTML=`<b>🔥 BIGGEST GAP: ${gap}</b><p class="small muted">${escapeHtml(game.players[hi[0]].name)} ↔ ${escapeHtml(game.players[lo[0]].name)}</p>`;
+     const dev=ent.map(([id,v])=>({id,v,d:Math.abs(v-med)})).sort((a,b)=>b.d-a.d);
+     const lone=ent.length>=3 && dev[0].d>=35 && (dev[0].d-(dev[1]?.d||0)>=10);
+     const card=$('#chaosEventCard'); card.classList.remove('hidden');
+     if(lone){
+       const p=game.players[dev[0].id];
+       game.controversialId=dev[0].id;
+       card.innerHTML=`<div class="kicker">🚨 ${tr('contro')}</div><h2>${p.avatar} ${escapeHtml(p.name)}, ${tr('defend')}</h2><p>${tr('convince')}</p><div class="badge">🎯 ${dev[0].v} · ROOM MEDIAN ${Math.round(med)}</div>`;
+     }else if(gap>=70) card.innerHTML=`<div class="kicker">⚔️ BEEF DETECTED</div><h2>Questa room è spaccata.</h2><p class="small muted">Differenza di ${gap} punti. Questo merita una spiegazione.</p>`;
+     else if(Math.max(...vals)-Math.min(...vals)<=15) card.innerHTML=`<div class="kicker">🧠 SAME BRAIN</div><h2>Sospettosamente d'accordo.</h2><p class="small muted">Per una volta TOOFAR? non ha distrutto l'amicizia.</p>`;
+     else card.innerHTML=`<div class="kicker">🎲 CHAOS CHECK</div><h2>Opinioni registrate. Dignità discutibile.</h2><p class="small muted">La room prende nota.</p>`;
+   } else $('#gapCard').textContent='Serve almeno un’altra persona per il dibattito.';
  }
  if(current==='debate'&&game?.extremes){
    const lo=game.extremes.low,hi=game.extremes.high;
-   $('#extremeCards').innerHTML=[hi,lo].map(id=>`<div class="extreme"><div class="av">${game.players[id].avatar}</div><b>${escapeHtml(game.players[id].name)}</b><strong>${game.responses[id]}</strong></div>`).join('');
+   const vals=Object.entries(game.responses), med=median(vals.map(x=>x[1]));
+   const dev=vals.map(([id,v])=>({id,v,d:Math.abs(v-med)})).sort((a,b)=>b.d-a.d);
+   const lone=vals.length>=3 && dev[0].d>=35 && (dev[0].d-(dev[1]?.d||0)>=10);
+   if(lone){
+     game.controversialId=dev[0].id;
+     const id=dev[0].id,p=game.players[id];
+     $('#extremeCards').innerHTML=`<div class="extreme" style="grid-column:1/-1"><div class="av">${p.avatar}</div><b>${escapeHtml(p.name)}</b><strong>${game.responses[id]}</strong><div class="badge">🔥 HOT TAKE</div></div>`;
+     $('#debate').querySelector('h2').textContent=tr('defend');
+     $('#debate').querySelector('p').textContent=tr('convince');
+   }else{
+     game.controversialId=null;
+     $('#extremeCards').innerHTML=[hi,lo].map(id=>`<div class="extreme"><div class="av">${game.players[id].avatar}</div><b>${escapeHtml(game.players[id].name)}</b><strong>${game.responses[id]}</strong></div>`).join('');
+   }
    startCountdown();
  }
  if(current==='argVote'&&game?.extremes){
-   const a=game.extremes.high,b=game.extremes.low;
-   const opts=[a,b,'none'];
-   $('#argOptions').innerHTML=opts.map(id=>id==='none'?`<div class="option">💀 <div class="grow"><b>Nessuno</b><div class="tiny muted">Non mi avete convinto.</div></div><button data-choice="none" class="${selectedArg==='none'?'sel':''}">VOTA</button></div>`:`<div class="option">${game.players[id].avatar} <div class="grow"><b>${escapeHtml(game.players[id].name)}</b><div class="tiny muted">Argomento</div></div><button data-choice="${id}" class="${selectedArg===id?'sel':''}">VOTA</button></div>`).join('');
+   const vals=Object.entries(game.responses),med=median(vals.map(x=>x[1])),dev=vals.map(([id,v])=>({id,v,d:Math.abs(v-med)})).sort((a,b)=>b.d-a.d);
+   const lone=vals.length>=3 && dev[0].d>=35 && (dev[0].d-(dev[1]?.d||0)>=10);
+   let opts;
+   if(lone){
+     const p=game.players[dev[0].id];
+     $('#argVote').querySelector('h2').textContent=`${p.avatar} ${escapeHtml(p.name)}: ti ha convinto?`;
+     opts=['yes','no'];
+     $('#argOptions').innerHTML=`<div class="option">🔥 <div class="grow"><b>${tr('yes')}</b></div><button data-choice="yes" class="${selectedArg==='yes'?'sel':''}">VOTA</button></div><div class="option">💀 <div class="grow"><b>${tr('no')}</b></div><button data-choice="no" class="${selectedArg==='no'?'sel':''}">VOTA</button></div>`;
+   }else{
+     const a=game.extremes.high,b=game.extremes.low; opts=[a,b,'none'];
+     $('#argVote').querySelector('h2').textContent='Chi ha argomentato meglio?';
+     $('#argOptions').innerHTML=opts.map(id=>id==='none'?`<div class="option">💀 <div class="grow"><b>Nessuno</b><div class="tiny muted">Non mi avete convinto.</div></div><button data-choice="none" class="${selectedArg==='none'?'sel':''}">VOTA</button></div>`:`<div class="option">${game.players[id].avatar} <div class="grow"><b>${escapeHtml(game.players[id].name)}</b><div class="tiny muted">Argomento</div></div><button data-choice="${id}" class="${selectedArg===id?'sel':''}">VOTA</button></div>`).join('');
+   }
    $('#argOptions').querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedArg=b.dataset.choice;render()});
    const done=game.argVotes[selfId]!=null;$('#submitArgVote').disabled=done;$('#argWaiting').textContent=done?`${game.counts?.argument_votes||Object.keys(game.argVotes).length}/${game.counts?.players||playerIds().length} hanno votato`:'';
  }
@@ -569,6 +625,9 @@ function shareText(text){
 }
 
 $('#backBtn').onclick=back;$('#profileBtn').onclick=()=>show('profile');
+$$('.langPick').forEach(b=>{b.onclick=()=>{appLang=b.dataset.lang;localStorage.setItem('toofar_lang',appLang);$$('.langPick').forEach(x=>x.classList.toggle('sel',x.dataset.lang===appLang));toast(appLang==='es'?'Idioma: Español':appLang==='en'?'Language: English':'Lingua: Italiano')}});
+$$('.langPick').forEach(x=>x.classList.toggle('sel',x.dataset.lang===appLang));
+
 $('#startOnboarding').onclick=()=>show('profileSetup');
 function renderOnboardingAvatars(){renderAvatarGrid($('#avatarGrid'),onboardingAvatar,a=>{onboardingAvatar=a;renderOnboardingAvatars()})}
 renderOnboardingAvatars();
