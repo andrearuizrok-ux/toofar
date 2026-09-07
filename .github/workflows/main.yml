@@ -1,0 +1,60 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scarica repository
+        uses: actions/checkout@v4
+
+      - name: Trova e scompatta il progetto TOOFAR
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -type f -name 'TOOFAR_GitHub_Android_APK_R*.zip' | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ZIP del progetto non trovato"
+            exit 1
+          fi
+
+          echo "Uso: $ZIP_FILE"
+          mkdir -p project
+          unzip -q "$ZIP_FILE" -d project
+          echo "Contenuto:"
+          find project -maxdepth 3 -type f | sort
+
+      - name: Configura Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configura Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Installa Android SDK 35
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Configura Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Genera APK
+        working-directory: project
+        run: gradle :app:assembleDebug
+
+      - name: Carica APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TOOFAR-Android-APK
+          path: project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
