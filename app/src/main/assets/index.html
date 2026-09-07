@@ -143,12 +143,12 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
 <section class="screen" id="reveal">
   <div class="kicker">3 · 2 · 1 · REVEAL</div><h2 id="revealTitle">Ecco cosa pensa la room.</h2><div id="revealList"></div>
   <div class="card" id="gapCard"></div><div class="card hidden" id="chaosEventCard"></div>
-  <div class="hostOnly"><button class="btn primary" id="startDebate">START DEBATE</button></div>
+  
 </section>
 
 <section class="screen" id="debate">
   <div class="kicker">DEBATE TIME</div><h2>Convincete la stanza.</h2><div class="extremes" id="extremeCards"></div><div class="timer" id="debateTimer">60</div><p class="small muted center">Parlate dal vivo. L'obiettivo è difendere bene la posizione, non “vincere la verità”.</p>
-  <div class="hostOnly"><button class="btn primary" id="goArgVote">VOTA GLI ARGOMENTI</button></div>
+  
 </section>
 
 <section class="screen" id="argVote">
@@ -160,12 +160,12 @@ p{line-height:1.45} .muted{color:var(--muted)} .small{font-size:12px} .tiny{font
   <div class="kicker">STILL SURE?</div><h2>Qualcuno ti ha fatto cambiare idea?</h2>
   <div class="card"><div class="tiny muted center">LA TUA RISPOSTA PRIMA</div><div class="score" id="oldScore">50</div><input id="rethinkRange" type="range" min="0" max="100" value="50"><div class="rangeLabels"><span>CHILL</span><span>DIPENDE</span><span>TOO FAR</span></div><button class="btn lime" id="submitRethink">SALVA</button></div>
   <div class="small muted center" id="rethinkWaiting"></div>
-  <div class="hostOnly"><button class="btn ghost" id="forceSummary">CHIUDI ROUND</button></div>
+  
 </section>
 
 <section class="screen" id="summary">
   <div class="kicker">ROUND COMPLETE</div><h2>Il caos paga.</h2><div class="card"><h3>Punti del round</h3><div id="roundPoints"></div></div><div class="card"><h3>Momento del round</h3><div id="roundMoment"></div></div>
-  <div class="hostOnly"><button class="btn primary" id="nextRound">ROUND SUCCESSIVO</button></div>
+  <div class="notice center">TOOFAR? continua automaticamente…</div>
 </section>
 
 <section class="screen" id="final">
@@ -260,8 +260,11 @@ function show(id,push=true){
   render();
   window.scrollTo(0,0);
 }
-function back(){
-  if(['lobby','topics','customQuestions','vote','reveal','debate','argVote','rethink','summary'].includes(current)){toast('Esci dalla room per tornare indietro');return}
+async function back(){
+  if(['lobby','topics','customQuestions','vote','reveal','debate','argVote','rethink','summary','final'].includes(current)&&roomId){
+    if(confirm('Uscire dalla room? La partita continuerà per gli altri giocatori.')) await leaveRoom();
+    return;
+  }
   const id=history.pop()||'home';show(id,false)
 }
 function setProfile(p){profile=p;localStorage.setItem('toofar_profile',JSON.stringify(profile));}
@@ -278,6 +281,7 @@ let playerToken=null;
 let pollTimer=null;
 let refreshing=false;
 let hostDeck=[];
+let phaseSeen='',phaseSince=0,autoBusy=false;
 
 async function rpc(name,payload={}){
   const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{
@@ -358,7 +362,7 @@ async function refreshState(silent=true){
     console.error(e);
   }finally{refreshing=false}
 }
-function startPolling(){ clearInterval(pollTimer); pollTimer=setInterval(()=>refreshState(true),1000); }
+function startPolling(){ clearInterval(pollTimer); pollTimer=setInterval(()=>refreshState(true),750); }
 function stopPolling(){clearInterval(pollTimer);pollTimer=null}
 
 async function connect(code,host){
@@ -382,16 +386,39 @@ async function connect(code,host){
     toast(human);
   }
 }
-function leaveRoom(){
-  stopPolling(); localStorage.removeItem('toofar_room_session');
-  room=null;game=null;roomId=null;selfId=null;playerToken=null;isHost=false;hostPeerId=null;selectedTopics.clear(); show('party');
+async function leaveRoom(){
+  const c=roomId,id=selfId,tok=playerToken; stopPolling();
+  if(c&&id&&tok){try{await rpc('toofar_leave_room',{p_code:c,p_player_id:id,p_token:tok})}catch(e){console.warn(e)}}
+  localStorage.removeItem('toofar_room_session');
+  room=null;game=null;roomId=null;selfId=null;playerToken=null;isHost=false;hostPeerId=null;selectedTopics.clear(); show('party'); toast('Hai lasciato la room');
 }
 
 function syncPhase(){
  if(!game)return;
+ if(phaseSeen!==game.phase+'-'+game.roundIndex){phaseSeen=game.phase+'-'+game.roundIndex;phaseSince=Date.now()}
  const map={lobby:'lobby',topics:'topics',customQuestions:'customQuestions',vote:'vote',reveal:'reveal',debate:'debate',argVote:'argVote',rethink:'rethink',summary:'summary',final:'final'};
  const target=map[game.phase];
  if(target&&current!==target){if(target==='argVote')selectedArg=null;show(target,false)}else render();
+ autopilot();
+}
+async function autoMove(expected,next,extra={}){
+ if(autoBusy||!roomId)return;autoBusy=true;
+ try{await rpc('toofar_auto_advance',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_expected_phase:expected,p_next_phase:next,p_next_round:extra.round??null,p_question:extra.question??null,p_debate_seconds:extra.seconds??null});await refreshState(true)}catch(e){console.warn('autopilot',e)}finally{autoBusy=false}
+}
+function deterministicDeck(){
+ hostBuildDeck(); return hostDeck;
+}
+function autopilot(){
+ if(!game||autoBusy)return; const elapsed=Date.now()-phaseSince;
+ if(game.phase==='vote'&&elapsed>30000) autoMove('vote','reveal');
+ else if(game.phase==='reveal'&&elapsed>7000) autoMove('reveal','debate',{seconds:45});
+ else if(game.phase==='argVote'&&elapsed>15000) autoMove('arg_vote','rethink');
+ else if(game.phase==='rethink'&&elapsed>15000) autoMove('rethink','summary');
+ else if(game.phase==='summary'&&elapsed>7000){
+   const next=game.roundIndex+1;
+   if(next>=game.totalRounds) autoMove('summary','final');
+   else {const deck=deterministicDeck();const q=deck[next%deck.length]||Q[next%Q.length];autoMove('summary','vote',{round:next,question:q})}
+ }
 }
 async function hostSetPhase(ph){
   if(!isHost)return;
@@ -400,15 +427,18 @@ async function hostSetPhase(ph){
 }
 function hostComputeTopics(){
  const ranked=Object.entries(game.topicCounts||{}).sort((a,b)=>Number(b[1])-Number(a[1])).map(x=>x[0]);
- game.selectedTopics=ranked.slice(0,4);
+ game.selectedTopics=ranked;
  if(!game.selectedTopics.length)game.selectedTopics=['Red Flags','Gelosia','Hot Takes'];
 }
 function hostBuildDeck(){
  hostComputeTopics();
  let deck=Q.filter(q=>game.selectedTopics.includes(q.cat));
  const custom=game.customQuestions||[];
- deck=[...custom,...deck].sort(()=>Math.random()-.5);
- if(deck.length<game.totalRounds)deck=[...deck,...Q.filter(q=>!deck.some(d=>d.id===q.id)).sort(()=>Math.random()-.5)];
+ deck=[...custom,...deck];
+ const seed=[...String(roomId)].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),2166136261);
+ const key=q=>{let x=seed;for(const c of String(q.id||q.text)){x=((x^c.charCodeAt(0))*16777619)>>>0}return x};
+ deck.sort((a,b)=>key(a)-key(b));
+ if(deck.length<game.totalRounds){const extra=Q.filter(q=>!deck.some(d=>d.id===q.id)).sort((a,b)=>key(a)-key(b));deck=[...deck,...extra]}
  hostDeck=deck.slice(0,Math.max(game.totalRounds,3));
  localStorage.setItem('toofar_host_deck_'+roomId,JSON.stringify(hostDeck));
 }
@@ -452,7 +482,7 @@ async function nextRound(){
 }
 async function submit(cmd){
  try{
-   if(cmd.type==='topics') await rpc('toofar_submit_topics',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_topics:cmd.topics.slice(0,3)});
+   if(cmd.type==='topics') await rpc('toofar_submit_topics',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_topics:cmd.topics});
    else if(cmd.type==='customTopic'){toast('I temi custom arriveranno nella prossima build');return;}
    else if(cmd.type==='customQuestion') await rpc('toofar_add_question',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_text:cmd.text});
    else if(cmd.type==='vote') await rpc('toofar_submit_answer',{p_code:roomId,p_player_id:selfId,p_token:playerToken,p_value:clamp(Number(cmd.value),0,100)});
@@ -524,7 +554,7 @@ function render(){
    const all=[...baseTopics.map(x=>x[0]),...game.customTopics];
    const counts=game.topicCounts||{};
    $('#topicList').innerHTML=all.map(t=>{const em=baseTopics.find(x=>x[0]===t)?.[1]||'✍️';return `<div class="topic"><div class="grow"><b>${em} ${escapeHtml(t)}</b><div class="tiny muted">${counts[t]||0} voti</div></div><button class="topicVote ${selectedTopics.has(t)?'on':''}" data-topic="${escapeHtml(t)}">${selectedTopics.has(t)?'✓':'+'}</button></div>`}).join('');
-   $('#topicList').querySelectorAll('button').forEach(b=>b.onclick=()=>{const t=b.dataset.topic;if(selectedTopics.has(t))selectedTopics.delete(t);else if(selectedTopics.size<3)selectedTopics.add(t);else toast('Massimo 3 temi');render()});
+   $('#topicList').querySelectorAll('button').forEach(b=>b.onclick=()=>{const t=b.dataset.topic;if(selectedTopics.has(t))selectedTopics.delete(t);else selectedTopics.add(t);render()});
  }
  if(current==='customQuestions'&&game){
    $('#customQuestionList').innerHTML=game.customQuestions.length?game.customQuestions.map(q=>`<div class="topic"><div class="grow"><b>${escapeHtml(q.text)}</b><div class="tiny muted">Domanda room</div></div><span>🔥</span></div>`).join(''):'Ancora nessuna.';
@@ -599,7 +629,7 @@ function render(){
  if(current==='summary'&&game){
    $('#roundPoints').innerHTML=Object.entries(game.roundDelta).sort((a,b)=>b[1]-a[1]).map(([id,v])=>`<div class="pointRow"><span>${game.players[id].avatar}</span><b>${escapeHtml(game.players[id].name)}</b><span class="pts">+${v}</span></div>`).join('');
    $('#roundMoment').innerHTML=`<p class="small">${escapeHtml(game.lastMoment)}</p>`;
-   $('#nextRound').textContent=game.roundIndex+1>=game.totalRounds?'VEDI CHAOS REPORT':'ROUND SUCCESSIVO';
+   if($('#nextRound')) $('#nextRound').textContent=game.roundIndex+1>=game.totalRounds?'VEDI CHAOS REPORT':'ROUND SUCCESSIVO';
  }
  if(current==='final'&&game){
    const rank=Object.entries(game.players).sort((a,b)=>b[1].score-a[1].score);
@@ -645,14 +675,14 @@ $('#submitCustomQuestion').onclick=()=>{const t=$('#questionInput').value.trim()
 $('#hostStartGame').onclick=hostStartGame;
 $('#voteRange').oninput=e=>$('#voteScore').textContent=e.target.value;
 $('#lockVote').onclick=()=>{submit({type:'vote',value:Number($('#voteRange').value)});localStats.rounds++;saveLocalStats();render()};
-$('#forceReveal').onclick=hostReveal;
-$('#startDebate').onclick=startDebate;
-$('#goArgVote').onclick=()=>hostSetPhase('argVote');
+if($('#forceReveal')) $('#forceReveal').onclick=hostReveal;
+if($('#startDebate')) $('#startDebate').onclick=startDebate;
+if($('#goArgVote')) $('#goArgVote').onclick=()=>hostSetPhase('argVote');
 $('#submitArgVote').onclick=()=>{if(!selectedArg)return toast('Scegli un’opzione');submit({type:'argVote',choice:selectedArg});render()};
-$('#forceRethink').onclick=()=>hostSetPhase('rethink');
+if($('#forceRethink')) $('#forceRethink').onclick=()=>hostSetPhase('rethink');
 $('#submitRethink').onclick=()=>{submit({type:'rethink',value:Number($('#rethinkRange').value)});render()};
-$('#forceSummary').onclick=finishRound;
-$('#nextRound').onclick=nextRound;
+if($('#forceSummary')) $('#forceSummary').onclick=finishRound;
+if($('#nextRound')) $('#nextRound').onclick=nextRound;
 $('#shareReport').onclick=()=>{const top=Object.values(game.players).sort((a,b)=>b.score-a.score).slice(0,3).map((p,i)=>`${i+1}. ${p.name} ${p.score}pt`).join(' · ');shareText(`TOOFAR? CHAOS REPORT — ${top} — No winners. Just evidence.`)};
 $('#playAgain').onclick=()=>{if(isHost){const oldPlayers=game.players;game=freshGame(roomId);game.players=oldPlayers;Object.values(game.players).forEach(p=>{p.score=0;p.metrics={argumentsWon:0,mindChanges:0,hotTakes:0,rounds:0,variance:0}});broadcastState();syncPhase()}};
 $('#quickRange').oninput=e=>{if(!quickLocked)$('#quickScore').textContent=e.target.value};
