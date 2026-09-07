@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TOOFAR? Party Web</title>
+<style>
+:root{--bg:#080a0d;--panel:#15191f;--line:#2a3139;--txt:#faf8f5;--muted:#9da5ae;--hot:#ff5264;--vio:#a45bff;--lime:#c8ff63}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif}
+body{background:radial-gradient(circle at 85% -10%,#32162b 0,transparent 35%),var(--bg)}button,input{font:inherit}
+.wrap{max-width:1100px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.logo{font-size:30px;font-weight:1000;letter-spacing:-1.5px}.logo i{color:var(--hot);font-style:normal}.version{font-size:11px;color:var(--muted);font-weight:900}
+.screen{display:none;min-height:85vh;align-items:center;justify-content:center}.screen.on{display:flex}
+.card{width:min(760px,100%);background:linear-gradient(180deg,#171c22,#11151a);border:1px solid var(--line);border-radius:28px;padding:25px;box-shadow:0 30px 90px #0008}
+h1{font-size:clamp(42px,8vw,78px);line-height:.94;letter-spacing:-.055em;margin:16px 0}h2{font-size:34px;margin:6px 0 14px}p{line-height:1.5}.muted{color:var(--muted)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:18px}.btn{border:0;border-radius:17px;padding:16px;font-weight:1000;cursor:pointer}.primary{background:var(--hot);color:white}.secondary{background:#252c34;color:white}.lime{background:var(--lime);color:#12150b}
+input{width:100%;border:1px solid var(--line);border-radius:15px;padding:14px;background:#0c1014;color:white;margin:7px 0}
+.code{font-size:clamp(48px,9vw,92px);font-weight:1000;letter-spacing:.12em;text-align:center;color:var(--hot);margin:12px 0}
+.players{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}.pill{padding:9px 12px;background:#0e1217;border:1px solid var(--line);border-radius:999px;font-weight:900}
+.badge{display:inline-flex;background:#321820;color:#ff9caa;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:1000}.question{font-size:clamp(28px,5vw,54px);font-weight:1000;line-height:1.05;margin:20px 0}
+.score{font-size:72px;font-weight:1000;color:var(--hot);text-align:center}input[type=range]{padding:0;border:0;accent-color:var(--hot)}.rangeLabels{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;font-weight:900}
+.answer{display:grid;grid-template-columns:minmax(90px,180px) 1fr 50px;gap:10px;align-items:center;margin:10px 0}.bar{height:12px;background:#242b33;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--vio),var(--hot))}
+.progress{height:10px;background:#242b33;border-radius:999px;overflow:hidden}.progress i{display:block;height:100%;background:var(--lime)}.center{text-align:center}.timer{font-size:24px;font-weight:1000;color:var(--lime)}
+.option{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:15px;margin:8px 0}.option button{margin-left:auto}
+.tv .wrap{max-width:1500px;padding:34px}.tv .card{width:min(1350px,100%)}.tv .question{font-size:clamp(48px,5vw,80px)}
+@media(max-width:620px){.actions{grid-template-columns:1fr}.card{padding:20px;border-radius:22px}}
+</style></head><body>
+<div class="wrap">
+<div class="top"><div><div class="logo">TOOFAR<i>?</i></div><div class="version">PARTY WEB · BETA 1</div></div><div id="timer" class="timer"></div></div>
+
+<section id="home" class="screen on"><div class="card"><span class="badge">NO INSTALL</span><h1>Gioca dal browser.<br><span style="color:var(--hot)">Zero download.</span></h1>
+<p class="muted">Crea una room, entra con un codice oppure trasforma TV/PC/tablet nel Party Screen. Funziona con la stessa room dell'app Android.</p>
+<div class="actions"><button class="btn primary" onclick="go('create')">＋ CREA ROOM</button><button class="btn secondary" onclick="go('join')">ENTRA CON CODICE</button><button class="btn lime" onclick="go('tvjoin')">📺 TV / PARTY SCREEN</button><button class="btn secondary" onclick="location.reload()">RESET</button></div>
+</div></section>
+
+<section id="create" class="screen"><div class="card"><h2>Crea la room</h2><input id="cname" maxlength="20" placeholder="Nickname host"><button class="btn primary" style="width:100%" onclick="createRoom()">CREA ROOM</button><p id="cerr" class="muted"></p></div></section>
+
+<section id="join" class="screen"><div class="card"><h2>Entra nella room</h2><input id="jcode" maxlength="6" placeholder="CODICE ROOM" style="text-transform:uppercase"><input id="jname" maxlength="20" placeholder="Nickname"><button class="btn primary" style="width:100%" onclick="joinRoom()">ENTRA</button><p id="jerr" class="muted"></p></div></section>
+
+<section id="tvjoin" class="screen"><div class="card"><h2>Party Screen</h2><input id="tvcode" maxlength="6" placeholder="CODICE ROOM" style="text-transform:uppercase"><button class="btn lime" style="width:100%" onclick="openTV()">APRI SU QUESTO SCHERMO</button><p class="muted">La TV non è un giocatore e non vede le risposte durante il voto segreto.</p><p id="tverr" class="muted"></p></div></section>
+
+<section id="lobby" class="screen"><div class="card center"><span class="badge">ROOM</span><div id="lcode" class="code"></div><div id="players" class="players" style="justify-content:center"></div><p id="lstatus" class="muted"></p><div id="hostStart"></div><button class="btn secondary" onclick="copyInvite()">COPIA LINK INVITO</button></div></section>
+
+<section id="game" class="screen"><div class="card"><div class="top"><span id="phase" class="badge"></span><span id="round" class="muted"></span></div><div id="content"></div></div></section>
+</div>
+<script>
+const SB_URL="https://shmibomjdexlzobidara.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNobWlib21qZGV4bHpvYmlkYXJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3OTc5NDMsImV4cCI6MjEwNDM3Mzk0M30.64wsLfibw3T2Fr10InD6iM896krtYFuv3KrY2-ViirU";
+const WEB_Q=[{"id": "w1", "cat": "Red Flags", "emoji": "🚩", "text": "Il tuo partner va a cena da solo con un ex e te lo dice soltanto dopo."}, {"id": "w2", "cat": "Red Flags", "emoji": "🚩", "text": "Una persona legge i messaggi del partner mentre dorme, senza permesso."}, {"id": "w3", "cat": "Gelosia", "emoji": "👀", "text": "Chiedere la posizione in tempo reale al partner quando esce la sera."}, {"id": "w4", "cat": "Soldi", "emoji": "💸", "text": "In una coppia con stipendi molto diversi, tutte le spese comuni vengono divise esattamente 50/50."}, {"id": "w5", "cat": "Hot Takes", "emoji": "🔥", "text": "Restare amici con un ex è quasi sempre una cattiva idea."}, {"id": "w6", "cat": "Morale", "emoji": "😈", "text": "A volte una bugia può essere più rispettosa della verità."}, {"id": "w7", "cat": "Famiglia", "emoji": "🏠", "text": "I genitori del partner hanno una chiave di casa e possono entrare senza avvisare."}, {"id": "w8", "cat": "Amicizia", "emoji": "🤝", "text": "Un amico stretto continua a frequentare una persona che ti ha trattato molto male."}, {"id": "w9", "cat": "Spicy", "emoji": "🌶️", "text": "Flirtare con altre persone in vacanza è accettabile se non succede nulla di fisico."}, {"id": "w10", "cat": "Spicy", "emoji": "🌶️", "text": "Conservare foto intime di un ex dopo l'inizio di una nuova relazione."}];
+let sess=null,state=null,poll=null,isTV=false,selectedArg=null;
+const $=id=>document.getElementById(id);
+async function rpc(fn,body){const r=await fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});const t=await r.text();let d;try{d=JSON.parse(t)}catch{d=t}if(!r.ok)throw new Error(d?.message||String(d||'Errore'));return d}
+function go(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));$(id).classList.add('on')}
+function code(v){return String(v||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6)}
+async function createRoom(){try{$('cerr').textContent='Creo la room…';let d=await rpc('toofar_create_room',{p_name:$('cname').value.trim()||'Host',p_avatar:'😈'});sess={code:d.code,player_id:d.player_id,token:d.player_token||d.token,is_host:true};start()}catch(e){$('cerr').textContent=e.message}}
+async function joinRoom(){try{$('jerr').textContent='Connessione…';let d=await rpc('toofar_join_room',{p_code:code($('jcode').value),p_name:$('jname').value.trim()||'Guest',p_avatar:'🔥'});sess={code:d.code||code($('jcode').value),player_id:d.player_id,token:d.player_token||d.token,is_host:false};start()}catch(e){$('jerr').textContent='Room non trovata, scaduta o già iniziata.'}}
+async function openTV(){try{let c=code($('tvcode').value);await rpc('toofar_tv_state',{p_code:c});sess={code:c};isTV=true;document.body.classList.add('tv');start()}catch(e){$('tverr').textContent='Room non trovata o scaduta.'}}
+function start(){sync();clearInterval(poll);poll=setInterval(sync,750)}
+async function sync(){try{state=isTV?await rpc('toofar_tv_state',{p_code:sess.code}):await rpc('toofar_get_state',{p_code:sess.code,p_player_id:sess.player_id,p_token:sess.token});render()}catch(e){console.warn(e)}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function timeLeft(){let x=state?.room?.phase_ends_at||state?.room?.debate_ends;if(!x)return '';return Math.max(0,Math.ceil((new Date(x)-Date.now())/1000))+'s'}
+setInterval(()=>{$('timer').textContent=timeLeft()},500);
+function playerMap(){return Object.fromEntries((state.players||[]).map(p=>[p.id,p]))}
+function render(){
+ let r=state.room,phase=r.phase,players=state.players||[],counts=state.counts||{};
+ if(phase==='lobby'){go('lobby');$('lcode').textContent=r.code;$('players').innerHTML=players.map(p=>`<span class="pill">${esc(p.avatar)} ${esc(p.name)}</span>`).join('');$('lstatus').textContent=players.length+' giocatori connessi';$('hostStart').innerHTML=(!isTV&&state.me?.is_host)?'<button class="btn primary" style="width:100%;margin:12px 0" onclick="startDefault()">START GAME · 6 DOMANDE</button>':'';return}
+ go('game');$('phase').textContent=phase.replace('_',' ').toUpperCase();$('round').textContent='ROUND '+(Number(r.round_index)+1)+' / '+r.total_rounds;
+ let q=r.current_question||{}, h=`<div class="question">${esc(q.text||'')}</div>`;
+ if(phase==='vote'){let n=counts.answers||0,total=counts.players||players.length;h+=`<div class="progress"><i style="width:${Math.min(100,n/Math.max(1,total)*100)}%"></i></div><p class="muted">${n}/${total} hanno votato</p>`;if(!isTV)h+=voteUI()}
+ else if(['reveal','debate','arg_vote','rethink','summary','final'].includes(phase)){h+=revealUI();if(!isTV)h+=actionsUI(phase)}
+ if(phase==='debate')h+=`<p class="center"><span class="badge">DEBATE</span></p><p class="center muted">Difendete la vostra posizione. Conta l'argomento, non chi “ha ragione”.</p>`;
+ if(phase==='summary')h+=`<h2 class="center">${esc(r.last_moment||'ROUND COMPLETE')}</h2>`;
+ if(phase==='final'){let rank=[...players].sort((a,b)=>(b.score||0)-(a.score||0));h=`<h1 class="center">THE CHAOS REPORT</h1>`+rank.map((p,i)=>`<div class="option"><b>${i+1}. ${esc(p.avatar)} ${esc(p.name)}</b><span style="margin-left:auto">${p.score||0} pt</span></div>`).join('')+'<p class="center muted">No winners. Just evidence.</p>'}
+ $('content').innerHTML=h
+}
+function voteUI(){if(state.me?.answer!=null)return '<div class="center"><span class="badge">RISPOSTA BLOCCATA ✓</span></div>';return `<div class="score" id="vscore">50</div><input id="vrange" type="range" min="0" max="100" value="50" oninput="vscore.textContent=this.value"><div class="rangeLabels"><span>CHILL</span><span>DIPENDE</span><span>TOO FAR</span></div><button class="btn primary" style="width:100%;margin-top:12px" onclick="vote()">BLOCCA RISPOSTA</button>`}
+async function vote(){await rpc('toofar_submit_answer',{p_code:sess.code,p_player_id:sess.player_id,p_token:sess.token,p_value:+$('vrange').value});sync()}
+function revealUI(){let map=playerMap();return '<div>'+((state.answers||[]).map(a=>`<div class="answer"><b>${esc(map[a.player_id]?.name||'Player')}</b><span class="bar"><i style="width:${a.value}%"></i></span><b>${a.value}</b></div>`).join(''))+'</div>'}
+function actionsUI(phase){if(phase==='arg_vote'&&state.me?.argument_vote==null){let a=[...(state.answers||[])].sort((x,y)=>x.value-y.value);if(!a.length)return '';let ids=[a[0]?.player_id,a[a.length-1]?.player_id].filter((v,i,s)=>v&&s.indexOf(v)===i);let map=playerMap();return '<h2>Chi ha argomentato meglio?</h2>'+ids.map(id=>`<div class="option">${esc(map[id]?.avatar)} <b>${esc(map[id]?.name)}</b><button class="btn secondary" onclick="argVote('${id}')">VOTA</button></div>`).join('')+`<div class="option">💀 <b>Nessuno</b><button class="btn secondary" onclick="argVote('none')">VOTA</button></div>`}
+ if(phase==='rethink'&&state.me?.answer!=null&&state.me?.rethink==null)return `<h2>STILL SURE?</h2><div class="score" id="rscore">${state.me.answer}</div><input id="rrange" type="range" min="0" max="100" value="${state.me.answer}" oninput="rscore.textContent=this.value"><button class="btn lime" style="width:100%" onclick="rethink()">SALVA</button>`;
+ return ''}
+async function argVote(choice){await rpc('toofar_submit_argument_vote',{p_code:sess.code,p_player_id:sess.player_id,p_token:sess.token,p_choice:choice});sync()}
+async function rethink(){await rpc('toofar_submit_rethink',{p_code:sess.code,p_player_id:sess.player_id,p_token:sess.token,p_value:+$('rrange').value});sync()}
+async function startDefault(){let deck=WEB_Q.slice(0,6);await rpc('toofar_start_game',{p_code:sess.code,p_player_id:sess.player_id,p_token:sess.token,p_questions:deck,p_selected_topics:['Red Flags','Gelosia','Soldi','Hot Takes','Spicy'],p_questions_per_round:1});sync()}
+function copyInvite(){let u=location.href.split('#')[0]+'#join/'+sess.code;navigator.clipboard?.writeText(u);alert('Link copiato: '+u)}
+let hash=location.hash.slice(1);if(hash.startsWith('join/')){$('jcode').value=hash.split('/')[1]||'';go('join')}else if(hash.startsWith('tv/')){$('tvcode').value=hash.split('/')[1]||'';go('tvjoin')}
+</script></body></html>
