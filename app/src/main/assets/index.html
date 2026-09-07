@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>TOOFAR? — Social Prototype V4</title>
+<style>
+:root{
+  --bg:#fff8f1;--surface:#fff;--ink:#19171f;--muted:#77717f;--line:#e7e0ea;
+  --violet:#6e5bff;--coral:#ff657a;--lime:#c8ff61;--soft:#f1edff;--shadow:0 14px 34px rgba(43,34,77,.12)
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg)}
+body{display:flex;justify-content:center;align-items:center;padding:18px}
+.phone{width:min(430px,100%);height:min(880px,calc(100vh - 12px));background:var(--bg);border-radius:34px;overflow:hidden;position:relative;box-shadow:0 25px 70px rgba(36,25,76,.2)}
+.top{height:66px;display:flex;align-items:center;justify-content:space-between;padding:13px 18px 7px}
+.logo{font-size:20px;font-weight:950;letter-spacing:.04em}.logo em{color:var(--coral);font-style:normal}.iconbtn{width:40px;height:40px;border-radius:14px;border:1px solid var(--line);background:#fff;font-weight:900}
+.screen{display:none;height:calc(100% - 66px);overflow:auto;padding:10px 18px 104px}.screen.active{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:40px;line-height:.98;letter-spacing:-.055em;margin:12px 0}h2{font-size:29px;line-height:1.04;letter-spacing:-.04em;margin:9px 0 12px}h3{margin:0 0 6px}
+p{line-height:1.42}.muted{color:var(--muted)}.small{font-size:12px}.center{text-align:center}
+.kicker{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:950;color:var(--violet)}
+.card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:18px;margin:14px 0;box-shadow:var(--shadow)}
+.btn{width:100%;border:0;border-radius:17px;padding:15px 17px;font-size:15px;font-weight:950;cursor:pointer;margin-top:11px}
+.btn.primary{background:var(--violet);color:#fff}.btn.coral{background:var(--coral);color:#fff}.btn.lime{background:var(--lime);color:var(--ink)}.btn.ghost{background:#fff;border:1px solid var(--line)}
+.hero{padding-top:42px}.heroArt{height:210px;border-radius:32px;background:linear-gradient(145deg,var(--violet),#8d79ff);margin:22px 0;position:relative;overflow:hidden}
+.heroArt:before,.heroArt:after{content:"?";position:absolute;font-size:130px;font-weight:1000;color:rgba(255,255,255,.16)}
+.heroArt:before{left:25px;top:6px;transform:rotate(-12deg)}.heroArt:after{right:20px;bottom:-42px;transform:rotate(18deg)}
+.heroArt span{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:950;font-size:27px;text-align:center;padding:20px}
+.field{margin:13px 0}.field label{font-size:12px;font-weight:900;display:block;margin-bottom:6px}
+.field input{width:100%;padding:14px 15px;border:1px solid var(--line);border-radius:15px;background:#fff;font-size:15px}
+.avatarPick{display:flex;gap:10px;flex-wrap:wrap}.avatar{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:var(--soft);font-size:25px;border:2px solid transparent}.avatar.sel{border-color:var(--violet);background:#e8e1ff}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:9px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:12px;font-weight:900;cursor:pointer}.chip.sel{background:var(--lime);border-color:#b8e94e}
+.person{display:flex;align-items:center;gap:12px}.person .ava{width:48px;height:48px;border-radius:17px;display:grid;place-items:center;background:var(--soft);font-size:23px}.grow{flex:1}
+.friendrow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.friendrow:last-child{border-bottom:0}
+.status{font-size:10px;font-weight:900;padding:5px 8px;border-radius:999px;background:#efffd2}.status.off{background:#f0edf3;color:#817989}
+.nav{position:absolute;left:0;right:0;bottom:0;height:78px;background:rgba(255,248,241,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding-top:11px}
+.nav button{background:none;border:0;font-size:10px;font-weight:900;color:#77717f}.nav b{display:block;font-size:20px;color:var(--ink)}
+.nav .main b{width:46px;height:46px;border-radius:15px;background:var(--violet);color:#fff;display:grid;place-items:center;margin:-24px auto 2px}
+.question{font-size:25px;font-weight:900;line-height:1.14;letter-spacing:-.03em;margin:15px 0}.pill{display:inline-flex;padding:7px 10px;border-radius:999px;background:#ffe3e8;color:#a62d45;font-size:11px;font-weight:950}
+.score{font-size:67px;line-height:.9;font-weight:1000;color:var(--violet);text-align:center;margin:12px 0}.labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-weight:800}
+input[type=range]{width:100%;accent-color:var(--violet)}
+.tabs{display:flex;background:#eee8f3;border-radius:15px;padding:4px;gap:4px}.tabs button{flex:1;border:0;padding:10px;border-radius:12px;font-weight:900;background:transparent}.tabs button.sel{background:#fff}
+.onlineCard{background:linear-gradient(145deg,#fff,#f2edff)}.onlineDot{width:9px;height:9px;border-radius:50%;background:#69d66f;display:inline-block;margin-right:5px}
+.compareGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mini{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px}.mini b{font-size:31px;display:block}
+.notice{padding:13px 14px;border-radius:17px;background:#fff1ef;border:1px solid #ffd9dd;font-size:12px}
+@media(max-width:650px){body{padding:0}.phone{width:100%;height:100vh;border-radius:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <button class="iconbtn" id="backBtn" onclick="back()" style="visibility:hidden">←</button>
+    <div class="logo">TOOFAR<em>?</em></div>
+    <button class="iconbtn" onclick="show('profile')">☺</button>
+  </div>
+
+  <section class="screen active" id="intro">
+    <div class="hero">
+      <div class="kicker">WELCOME TO TOOFAR?</div>
+      <h1>Quanto è troppo?</h1>
+      <p class="muted">Red flag, hot take e dilemmi. Rispondi, confrontati con gli amici e scopri quanto siete davvero sulla stessa lunghezza d’onda.</p>
+      <div class="heroArt"><span>Giudica.<br>Confronta.<br>Scopri.</span></div>
+      <button class="btn primary" onclick="show('signup')">INIZIA →</button>
+      <button class="btn ghost" onclick="show('login')">Ho già un account</button>
+    </div>
+  </section>
+
+  <section class="screen" id="signup">
+    <div class="kicker">1 DI 3 · IL TUO PROFILO</div><h2>Come ti chiami qui dentro?</h2>
+    <div class="card">
+      <div class="field"><label>NOME / NICKNAME</label><input value="Andrea" id="nameField"></div>
+      <div class="field"><label>USERNAME</label><input value="@andrea"></div>
+      <label class="small" style="font-weight:900">SCEGLI IL TUO AVATAR</label>
+      <div class="avatarPick" style="margin-top:9px">
+        <button class="avatar sel" onclick="pickAvatar(this)">😈</button><button class="avatar" onclick="pickAvatar(this)">🔥</button><button class="avatar" onclick="pickAvatar(this)">🫣</button><button class="avatar" onclick="pickAvatar(this)">👀</button><button class="avatar" onclick="pickAvatar(this)">💀</button>
+      </div>
+    </div>
+    <button class="btn primary" onclick="show('interests')">CONTINUA</button>
+  </section>
+
+  <section class="screen" id="interests">
+    <div class="kicker">2 DI 3 · I TUOI TEMI</div><h2>Cosa vuoi giudicare?</h2>
+    <p class="muted small">Puoi cambiarlo quando vuoi.</p>
+    <div class="card">
+      <div class="chips">
+        <button class="chip sel" onclick="toggle(this)">🚩 Red Flag</button>
+        <button class="chip sel" onclick="toggle(this)">❤️ Coppie</button>
+        <button class="chip" onclick="toggle(this)">👀 Gelosia</button>
+        <button class="chip sel" onclick="toggle(this)">🔥 Hot Takes</button>
+        <button class="chip" onclick="toggle(this)">💸 Soldi</button>
+        <button class="chip" onclick="toggle(this)">😈 Morale</button>
+        <button class="chip" onclick="toggle(this)">🍑 Piccante</button>
+        <button class="chip" onclick="toggle(this)">👪 Famiglia</button>
+      </div>
+    </div>
+    <button class="btn primary" onclick="show('connect')">CONTINUA</button>
+  </section>
+
+  <section class="screen" id="connect">
+    <div class="kicker">3 DI 3 · TROVA LA TUA GENTE</div><h2>TOOFAR? è più divertente insieme.</h2>
+    <div class="card">
+      <button class="btn lime" onclick="fakeImport()">📱 Trova amici dai contatti</button>
+      <button class="btn ghost" onclick="fakeInvite()">🔗 Condividi il tuo link</button>
+      <p class="center small muted" id="connectMsg"></p>
+    </div>
+    <div class="card">
+      <h3>Persone che potresti conoscere</h3>
+      <div class="friendrow"><div class="ava">🔥</div><div class="grow"><b>Simone</b><div class="small muted">@simone</div></div><button class="chip" onclick="addFriend(this)">Aggiungi</button></div>
+      <div class="friendrow"><div class="ava">🫣</div><div class="grow"><b>Valeria</b><div class="small muted">@vale</div></div><button class="chip" onclick="addFriend(this)">Aggiungi</button></div>
+    </div>
+    <button class="btn primary" onclick="show('home')">ENTRA IN TOOFAR?</button>
+    <button class="btn ghost" onclick="show('home')">Salta per ora</button>
+  </section>
+
+  <section class="screen" id="login">
+    <div class="kicker">BENTORNATO</div><h2>Accedi a TOOFAR?</h2>
+    <div class="card"><div class="field"><label>EMAIL O USERNAME</label><input placeholder="@username"></div><div class="field"><label>PASSWORD</label><input type="password" value="password"></div></div>
+    <button class="btn primary" onclick="show('home')">ACCEDI</button>
+  </section>
+
+  <section class="screen" id="home">
+    <div class="person" style="margin-bottom:10px"><div class="ava">😈</div><div><div class="small muted">Ciao Andrea</div><b>Pronta a giudicare?</b></div></div>
+    <div class="tabs"><button class="sel" onclick="tab(this)">Per te</button><button onclick="tab(this)">Amici</button><button onclick="tab(this)">Online</button></div>
+    <div class="card">
+      <span class="pill">🚩 RED FLAG</span>
+      <div class="question">Il tuo partner va in vacanza con un ex perché fanno ancora parte dello stesso gruppo di amici.</div>
+      <div class="score" id="homeScore">50</div>
+      <input type="range" min="0" max="100" value="50" oninput="document.getElementById('homeScore').textContent=this.value">
+      <div class="labels"><span>ok</span><span>dipende</span><span>TOO FAR</span></div>
+      <button class="btn primary" onclick="show('result')">BLOCCA LA RISPOSTA</button>
+    </div>
+  </section>
+
+  <section class="screen" id="result">
+    <div class="kicker">RISPOSTATO</div><h2>Sei più severa della media.</h2>
+    <div class="card"><div class="compareGrid"><div class="mini"><span class="small muted">TU</span><b>82</b></div><div class="mini"><span class="small muted">COMMUNITY</span><b>67</b></div></div></div>
+    <div class="card"><h3>I tuoi amici</h3>
+      <div class="friendrow"><div class="ava">🔥</div><div class="grow"><b>Simone</b><div class="small muted">ha già risposto</div></div><b>38</b></div>
+      <div class="friendrow"><div class="ava">🫣</div><div class="grow"><b>Valeria</b><div class="small muted">ha già risposto</div></div><b>74</b></div>
+    </div>
+    <button class="btn coral" onclick="show('friends')">CONFRONTA CON UN AMICO</button>
+  </section>
+
+  <section class="screen" id="friends">
+    <div class="kicker">AMICI</div><h2>La tua cerchia.</h2>
+    <div class="card">
+      <div class="friendrow"><div class="ava">🔥</div><div class="grow"><b>Simone</b><div class="small muted"><span class="onlineDot"></span>online</div></div><button class="chip" onclick="show('compare')">Confronta</button></div>
+      <div class="friendrow"><div class="ava">🫣</div><div class="grow"><b>Valeria</b><div class="small muted"><span class="onlineDot"></span>online</div></div><button class="chip">Sfida</button></div>
+      <div class="friendrow"><div class="ava">👀</div><div class="grow"><b>Marco</b><div class="small muted">offline</div></div><button class="chip">Sfida</button></div>
+    </div>
+    <button class="btn lime" onclick="show('connect')">＋ AGGIUNGI AMICI</button>
+  </section>
+
+  <section class="screen" id="online">
+    <div class="kicker">ONLINE</div><h2>Giudica con persone nuove.</h2>
+    <div class="card onlineCard">
+      <div class="person"><div class="ava">💀</div><div class="grow"><b>@wildtake</b><div class="small muted"><span class="onlineDot"></span>online ora</div></div><button class="chip">Segui</button></div>
+      <p class="small muted">87% di opinioni simili alle tue</p>
+    </div>
+    <div class="card onlineCard">
+      <div class="person"><div class="ava">👀</div><div class="grow"><b>@nosugar</b><div class="small muted"><span class="onlineDot"></span>online ora</div></div><button class="chip">Segui</button></div>
+      <p class="small muted">68% di opinioni simili alle tue</p>
+    </div>
+    <div class="notice">La modalità online mostra nickname e profili, non dati personali. Le richieste di amicizia sono sempre facoltative.</div>
+  </section>
+
+  <section class="screen" id="compare">
+    <div class="kicker">ANDREA × SIMONE</div><h2>La vostra intesa.</h2>
+    <div class="card"><div class="center"><div class="score">78%</div><b>BELLA INTESA</b></div>
+      <p class="small muted center">Basato su 18 risposte condivise</p></div>
+    <div class="card"><h3>Dove coincidete</h3><p>💸 Soldi <b style="float:right">91%</b></p><p>❤️ Coppia <b style="float:right">82%</b></p><p>👀 Gelosia <b style="float:right">48%</b></p></div>
+    <button class="btn coral">INIZIA UNA SFIDA PRIVATA</button>
+  </section>
+
+  <section class="screen" id="profile">
+    <div class="kicker">PROFILO</div><h2>Andrea 😈</h2>
+    <div class="card"><b>@andrea</b><p class="small muted">126 risposte · 12 amici · 4 sfide attive</p></div>
+    <div class="card"><h3>Il tuo profilo</h3><p>❤️ Relazioni <b style="float:right">Selettiva</b></p><p>💸 Soldi <b style="float:right">Pragmatica</b></p><p>🔐 Privacy <b style="float:right">Protettiva</b></p></div>
+  </section>
+
+  <div class="nav" id="nav">
+    <button onclick="show('home')"><b>⌂</b>Home</button>
+    <button onclick="show('friends')"><b>♟</b>Amici</button>
+    <button class="main" onclick="show('online')"><b>◎</b>Online</button>
+    <button onclick="show('compare')"><b>↔</b>Confronta</button>
+    <button onclick="show('profile')"><b>☺</b>Tu</button>
+  </div>
+</div>
+<script>
+let current='intro', stack=[];
+function show(id){if(id!==current)stack.push(current);document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');current=id;document.getElementById('backBtn').style.visibility=id==='intro'?'hidden':'visible';document.getElementById('nav').style.display=['intro','signup','interests','connect','login'].includes(id)?'none':'flex'}
+function back(){const id=stack.pop();if(!id)return;document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');current=id;document.getElementById('backBtn').style.visibility=id==='intro'?'hidden':'visible';document.getElementById('nav').style.display=['intro','signup','interests','connect','login'].includes(id)?'none':'flex'}
+function pickAvatar(b){b.parentElement.querySelectorAll('.avatar').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')}
+function toggle(b){b.classList.toggle('sel')}
+function addFriend(b){b.textContent='Aggiunto ✓';b.classList.add('sel')}
+function fakeImport(){document.getElementById('connectMsg').textContent='Demo: trovati 2 contatti su TOOFAR?'}
+function fakeInvite(){document.getElementById('connectMsg').textContent='Link copiato: toofar.app/@andrea'}
+function tab(b){b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel'); if(b.textContent==='Online')show('online'); if(b.textContent==='Amici')show('friends')}
+document.getElementById('nav').style.display='none';
+</script>
+</body>
+</html>
